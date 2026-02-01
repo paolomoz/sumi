@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #F8F8F7;
+  --color-foreground: #0A0A0A;
+  --color-primary: #0081F2;
+  --color-primary-hover: #006ACC;
+  --color-primary-light: #E6F2FF;
+  --color-muted: #6B7280;
+  --color-muted-foreground: #9CA3AF;
+  --color-border: #E5E5E3;
+  --color-card: #FFFFFF;
+  --color-card-hover: #FAFAF9;
+  --color-accent: #F5F5F4;
+  --color-destructive: #EF4444;
+  --color-success: #22C55E;
+
+  /* Category colors */
+  --color-cat-japanese: #C84B31;
+  --color-cat-art-nouveau: #7B6D4E;
+  --color-cat-modern: #2563EB;
+  --color-cat-illustration: #9333EA;
+  --color-cat-print: #374151;
+  --color-cat-folk: #D97706;
+  --color-cat-digital: #06B6D4;
+  --color-cat-classical: #92400E;
+  --color-cat-asian: #DC2626;
+  --color-cat-street: #16A34A;
+  --color-cat-craft: #B45309;
+  --color-cat-fantasy: #7C3AED;
+
+  --font-sans: "Inter", var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 25%,
+    var(--color-border) 50%,
+    var(--color-accent) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
