@@ -1,0 +1,511 @@
+"""Compare Imagen 4 vs Gemini 3 Pro Image Preview on 3 prompts.
+
+Usage:
+    cd backend && python -m scripts.compare_models
+"""
+
+import asyncio
+import base64
+import sys
+import time
+from pathlib import Path
+
+# Add backend to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from google import genai
+from google.genai import types
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+from sumi.config import settings
+from sumi.engine.content_analyzer import analyze_content
+from sumi.engine.content_structurer import generate_structured_content
+from sumi.engine.combination_recommender import recommend_combinations
+from sumi.engine.prompt_crafter import craft_prompt
+from sumi.references.loader import get_references
+
+
+# --- The 3 test topics ---
+
+TOPIC_P = """#### P) "Disneylandification" of the Brand Experience `#product` `#customer` [STRONG]
+There are two worlds: **discovery** (outside the brand -- search, social, generic chat) and **brand experience** (inside the brand's owned surface). The unbranded chat experience is generic. The brand experience must delight. Users entering the brand expect Disneyland, not a search bar.
+
+What this means concretely:
+- **More actionable** -- the brand experience should feel like an app, not a brochure. Users do things, not just read things.
+- **Trust signals** -- find and surface the signals that actually change user behaviour. Not generic badges, but context-aware proof points that matter to *this* user at *this* moment.
+- **Meaningful events** -- track events related to the user that are useful to build context. Context is the raw material for exceptional experience. Without it, personalisation is guesswork.
+
+> **-- Loni**
+
+> **Connection to B (Meeting Pipeline) & D (Feedback Pipeline):** The "meaningful events" concept mirrors the team-internal pattern of capturing signals passively and processing them into intelligence. Loni is describing the same architecture applied to the *end user*: capture events --> build context --> deliver personalised experience. The pipeline pattern from Category 1 is also the product architecture.
+
+> **Connection to O (Sustainable Fun):** "Disneylandification" is the product equivalent of "10X while having fun." The user should feel delighted, not overwhelmed. The team should feel the same way about building it.
+
+> **Suggestion:** "Meaningful events" is the concept to unpack. What counts as meaningful? Some candidates: purchase history, content engagement patterns, support interactions, lifecycle stage, expressed preferences vs. revealed preferences. The research question is which events actually move the needle on experience quality -- and which are noise. This is testable."""
+
+TOPIC_AI = """## 4. Becoming AI Frontier Engineers
+
+_Pushing the technical and cultural boundaries of what's possible with AI as a daily engineering practice._
+
+### Technical Boundaries to Explore
+
+#### I) Long-Running Autonomous Agents `#tooling` `#automation` [EXPLORING]
+How long can we sustain a single agent session? Can we hand an agent a task that takes hours -- or an entire workday -- and have it deliver a finished result? This is about testing the limits of agent endurance: context management, error recovery, self-correction over extended runs.
+
+> **Connection to C:** The Auto-Demo Generator already implies multi-step agent work. This pushes the question further -- what if the agent doesn't just summarise, but *builds the whole thing*? The constraint isn't the AI's capability, it's our ability to define the task clearly enough for a long autonomous run.
+
+> **Suggestion:** Start with a benchmark: give an agent a well-scoped task (e.g. "build a working integration test suite for module X") and measure how far it gets in 1h, 4h, 8h. Map the failure modes. That data tells you where to invest in better scaffolding.
+
+#### J) Overnight Idea Factory `#automation` `#process` `#learning` [STRONG]
+The system generates ideas automatically, lists them in a backlog, and implements them overnight. Multiple agents try different approaches to the same idea, criticise each other's results, and elect winners. The engineer arrives in the morning to a set of ranked, working prototypes ready for review.
+
+This turns sleep into productive time. A team of 10 engineers effectively becomes a team of 10 engineers + N overnight agents. The number of experiments the team can run increases **100X**.
+
+> **Connection to Cat.1 pattern:** This is the `Trigger --> Capture --> Process --> Artifact --> Distribute` pipeline on steroids. The trigger is "end of workday." The artifact is working code.
+
+> **Connection to E (feedback loop):** The morning review becomes the feedback signal. Which overnight results get picked up? That trains the system on what "good" looks like for this team.
+
+> **Suggestion:** The critical design choice is the idea queue. Where do ideas come from? Options: manually seeded, extracted from Slack/meetings (ties to B), generated by analysing gaps in test coverage or customer feedback (ties to D). The richer the input funnel, the more valuable the overnight runs.
+
+#### K) Continuous AI Tool Scouting `#tooling` `#learning` [STRONG]
+Experiment with AI tools continuously -- not as a one-off evaluation, but as an ongoing practice. The purpose is twofold: (1) discover new capabilities that inspire ideas, and (2) find tools that make existing ideas faster to implement by leveraging what already exists.
+
+> **Connection to H (Workflow Shadowing):** When someone discovers a powerful tool, Shadowing captures and propagates it. Scouting is the upstream activity that feeds the discovery pipeline.
+
+> **Suggestion:** Assign a rotating "scout" role -- each sprint, one person spends a fixed block of time trying new tools and reports back. Low overhead, high serendipity. The Cookbook (F) is where findings get published.
+
+### Cultural Boundaries to Break
+
+#### L) Permission to Experiment Freely `#culture` `#learning` [STRONG]
+Everyone on the team has explicit permission to spend time on whatever experiment they have in mind -- even personal ideas. The only obligation: report back to the team what you learned. With the Auto-Demo Generator (C), even that obligation is automated. You experiment, the system tells the story.
+
+> **Connection to C:** This is the cultural policy that makes the Auto-Demo Generator essential. Without (C), the "report back" requirement becomes a tax that kills experimentation. With (C), experimentation is frictionless end-to-end.
+
+> **Tension:** "Whatever experiment" is deliberately broad. The risk is diffusion -- people optimise for personal interest over team leverage. The mitigating design: the Cookbook (F) and overnight factory (J) create natural gravity toward ideas that compound for the team.
+
+#### M) "Be Pirates" `#culture` [STRONG]
+Break the rules. Use what you need. Leverage the education fund to expense subscriptions to tools that make you faster. Don't ask for a procurement cycle -- just do it. **This was explicitly sanctioned across the organisation at the workshop level.**
+
+> **Why this matters enormously:** Most "innovation culture" initiatives fail because the permission is implicit. This one is explicit, named, and endorsed by directors+. "Be pirates" is a cultural licence that removes the #1 blocker to experimentation: fear of getting in trouble.
+
+> **Connection to K (Tool Scouting):** Pirates + education fund + scouting mandate = the team can move at the speed of the AI ecosystem itself. No waiting for enterprise procurement to evaluate a tool for 6 months.
+
+> **Suggestion:** Make the pirate stories visible. When someone breaks a rule and it pays off, celebrate it loudly (Slack, demos, retros). That reinforces the permission and gives others courage. When it doesn't pay off, celebrate the learning. Both outcomes compound.
+
+#### N) Parallel Innovation & Internal Competition `#culture` `#process` [STRONG]
+Different teams may build similar things in parallel -- and that's not waste, it's expected. At some point one version gets promoted and ships. The others aren't failures; they're exploration that informed the winner.
+
+**Case study from Anthropic (Alex Koren):** His team was working on something similar to what became Cowork. Then Cowork was built and shipped in 10 days over the Christmas holidays. His team's parallel work wasn't lost -- it was part of the broader exploration that made the winning version possible.
+
+The principles:
+- **Embrace competition** -- parallel efforts sharpen ideas, not dilute them
+- **Share continuously** -- so parallel tracks cross-pollinate instead of diverging in silence
+- **Finalise milestones** -- at some point, converge. Pick a winner and ship it.
+- **Continuously innovate** -- the "losing" team doesn't stop. They take their learnings and start the next thing.
+
+> **Connection to J (Overnight Factory):** The overnight factory is this principle on autopilot. Multiple agents try multiple approaches, criticise results, elect winners. What Anthropic does across teams over weeks, agents can do overnight.
+
+> **Connection to L & M (Permission + Pirates):** This only works if people aren't punished for building something that doesn't get picked. "Be pirates" protects the parallel explorers. Without that cultural safety, people wait for consensus before starting -- and the 10-day sprint that ships Cowork never happens.
+
+> **Tension:** There's a real cost to duplication. The mitigation is the "share continuously" part. If teams are transparent about what they're building (Cookbook F, async status G), parallel work converges faster and cross-pollinates. Silent duplication is waste. Visible duplication is evolution.
+
+> **Suggestion:** For your team specifically, this reframes how you handle overlap with other AEM teams. Don't coordinate to avoid overlap. Coordinate to stay visible while you overlap. The best version wins, and the losers are just early drafts of the next winner.
+
+#### O) Sustainable Intensity: 10X While Having Fun `#culture` `#learning` [STRONG]
+We are already outperforming the industry and the company average. The next leap isn't about adding hours or pressure -- it's about fundamentally changing what humans spend their energy on. Delegate the grind. Keep the creative, strategic, high-judgment work. Make the transformation feel like play, not survival.
+
+Three pillars:
+1. **Challenge what we do** -- question every task. Can it be done differently? Can it be eliminated? Can an agent do it?
+2. **Psychological safety** -- experimenting with new ways of working can't carry the risk of "doing the wrong thing." Safe to try, safe to fail.
+3. **Sustainable energy** -- this isn't a hack week. It's a permanent operating model. If it drains people, it's broken.
+
+> **Connection to M (Be Pirates):** "Be pirates" gives permission to break rules. This note adds the emotional contract: the goal is joy and elevation, not extraction. Pirates have fun -- that's the point.
+
+> **Connection to L (Permission to Experiment):** Free experimentation works only if people don't feel guilty about the time. This note removes that guilt by redefining what "productive" means: working at a higher level IS the output.
+
+> **Tension with J (Overnight Factory):** The overnight factory multiplies throughput. But if the morning review becomes an obligation that feels like checking homework, it backfires. The design has to make the morning review feel like opening presents, not processing a queue.
+
+> **Suggestion:** At Feb 9, make this the opening frame. Before any tools, pipelines, or agents -- set the tone: "We're going to become 10X faster, and it's going to be more fun, not less. Here's why." Every subsequent exercise gets filtered through this lens."""
+
+TOPIC_C = """#### C) Auto-Demo Generator for POCs `#automation` `#visibility` `#tooling` [EXPLORING]
+Someone works on a POC for a week. The system inspects the code and produces a full demo package -- with no manual effort:
+1. Analyse the code and generate a structured summary (technical steps, results, learnings)
+2. Write a demo script from the summary
+3. Record the screen walkthrough (Puppeteer)
+4. Generate a talk track
+5. Produce a voiceover (ElevenLabs API)
+6. Post the 1-minute demo to Slack
+
+> **Connection:** This solves the chronic "great work, nobody saw it" problem. Every POC gets visibility by default. Also forces clarity -- if the system can explain it, the work is well-structured."""
+
+TOPICS = {
+    "disneylandification": {
+        "name": "Disneylandification of Brand Experience",
+        "topic": TOPIC_P,
+    },
+    "ai-frontier": {
+        "name": "Becoming AI Frontier Engineers",
+        "topic": TOPIC_AI,
+    },
+    "auto-demo": {
+        "name": "Auto-Demo Generator for POCs",
+        "topic": TOPIC_C,
+    },
+}
+
+
+OUTPUT_DIR = Path(__file__).resolve().parent.parent / "output" / "comparison"
+
+
+def _get_client() -> genai.Client:
+    return genai.Client(api_key=settings.google_api_key)
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=20))
+async def generate_with_imagen(prompt: str, output_path: str, aspect_ratio: str = "16:9") -> str:
+    """Generate image with Imagen 4."""
+    client = _get_client()
+    response = await client.aio.models.generate_images(
+        model=settings.imagen_model,
+        prompt=prompt,
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio=aspect_ratio,
+        ),
+    )
+    if not response.generated_images:
+        raise RuntimeError("Imagen returned no images")
+
+    image_bytes = response.generated_images[0].image.image_bytes
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(image_bytes)
+    return str(output)
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=20))
+async def generate_with_gemini(prompt: str, output_path: str, aspect_ratio: str = "16:9") -> str:
+    """Generate image with Gemini 3 Pro Image Preview (multimodal)."""
+    client = _get_client()
+
+    # Append aspect ratio to prompt (Gemini multimodal doesn't have a separate config for it)
+    full_prompt = f"{prompt}\n\nAspect ratio: {aspect_ratio}."
+
+    response = await client.aio.models.generate_content(
+        model="gemini-3-pro-image-preview",
+        contents=full_prompt,
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+        ),
+    )
+
+    # Extract image from response parts
+    for candidate in (response.candidates or []):
+        for part in (candidate.content.parts or []):
+            if part.inline_data and part.inline_data.data:
+                image_bytes = part.inline_data.data
+                # inline_data.data is already bytes in google-genai Python SDK
+                if isinstance(image_bytes, str):
+                    image_bytes = base64.b64decode(image_bytes)
+                output = Path(output_path)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_bytes(image_bytes)
+                return str(output)
+
+    raise RuntimeError("Gemini returned no image in response")
+
+
+async def run_pipeline_for_topic(topic_key: str, topic_text: str) -> dict:
+    """Run pipeline steps 1-4 (analyze, structure, recommend, craft) for a topic."""
+    print(f"\n{'='*60}")
+    print(f"  Processing: {topic_key}")
+    print(f"{'='*60}")
+
+    # Step 1: Analyze
+    print(f"  [{topic_key}] Step 1/4: Analyzing content...")
+    analysis = await analyze_content(topic_text)
+
+    # Step 2: Structure
+    print(f"  [{topic_key}] Step 2/4: Structuring content...")
+    structured_content = await generate_structured_content(topic_text, analysis)
+
+    # Step 3: Recommend combinations
+    print(f"  [{topic_key}] Step 3/4: Recommending layout × style...")
+    recommendations = await recommend_combinations(topic_text, analysis)
+
+    # Select first recommendation
+    refs = get_references()
+    if recommendations:
+        layout_id = recommendations[0]["layout_id"]
+        style_id = recommendations[0]["style_id"]
+    else:
+        layout_id = "hub-spoke"
+        style_id = "ukiyo-e"
+
+    layout = refs.get_layout(layout_id)
+    style = refs.get_style(style_id)
+    layout_name = layout.name if layout else layout_id
+    style_name = style.name if style else style_id
+
+    print(f"  [{topic_key}] Selected: {layout_name} × {style_name}")
+
+    # Step 4: Craft prompt
+    print(f"  [{topic_key}] Step 4/4: Crafting prompt...")
+    analysis_md = analysis.get("analysis_markdown", "") if isinstance(analysis, dict) else str(analysis)
+    prompt = await craft_prompt(
+        layout_id=layout_id,
+        style_id=style_id,
+        structured_content=structured_content,
+        topic=topic_text,
+        analysis=analysis_md,
+        aspect_ratio="16:9",
+        language="English",
+    )
+
+    print(f"  [{topic_key}] Prompt ready ({len(prompt)} chars)")
+
+    return {
+        "topic_key": topic_key,
+        "layout_id": layout_id,
+        "layout_name": layout_name,
+        "style_id": style_id,
+        "style_name": style_name,
+        "prompt": prompt,
+        "recommendations": recommendations,
+    }
+
+
+async def generate_images_for_topic(result: dict) -> dict:
+    """Generate images with both models for a given topic/prompt."""
+    topic_key = result["topic_key"]
+    prompt = result["prompt"]
+    topic_dir = OUTPUT_DIR / topic_key
+
+    # Save prompt
+    topic_dir.mkdir(parents=True, exist_ok=True)
+    (topic_dir / "prompt.md").write_text(prompt, encoding="utf-8")
+
+    # Generate with both models
+    print(f"\n  [{topic_key}] Generating with Imagen 4...")
+    t0 = time.time()
+    try:
+        imagen_path = await generate_with_imagen(
+            prompt=prompt,
+            output_path=str(topic_dir / "imagen4.png"),
+        )
+        imagen_time = time.time() - t0
+        print(f"  [{topic_key}] Imagen 4 done ({imagen_time:.1f}s)")
+        result["imagen_path"] = imagen_path
+        result["imagen_time"] = imagen_time
+        result["imagen_error"] = None
+    except Exception as e:
+        imagen_time = time.time() - t0
+        print(f"  [{topic_key}] Imagen 4 FAILED: {e}")
+        result["imagen_path"] = None
+        result["imagen_time"] = imagen_time
+        result["imagen_error"] = str(e)
+
+    print(f"  [{topic_key}] Generating with Gemini 3 Pro Image Preview...")
+    t0 = time.time()
+    try:
+        gemini_path = await generate_with_gemini(
+            prompt=prompt,
+            output_path=str(topic_dir / "gemini3pro.png"),
+        )
+        gemini_time = time.time() - t0
+        print(f"  [{topic_key}] Gemini 3 Pro done ({gemini_time:.1f}s)")
+        result["gemini_path"] = gemini_path
+        result["gemini_time"] = gemini_time
+        result["gemini_error"] = None
+    except Exception as e:
+        gemini_time = time.time() - t0
+        print(f"  [{topic_key}] Gemini 3 Pro FAILED: {e}")
+        result["gemini_path"] = None
+        result["gemini_time"] = gemini_time
+        result["gemini_error"] = str(e)
+
+    return result
+
+
+def generate_html(results: list[dict]) -> str:
+    """Generate an HTML comparison page."""
+    rows = ""
+    for r in results:
+        topic_info = TOPICS[r["topic_key"]]
+        topic_name = topic_info["name"]
+        layout = f'{r["layout_name"]} ({r["layout_id"]})'
+        style = f'{r["style_name"]} ({r["style_id"]})'
+
+        imagen_img = ""
+        if r.get("imagen_path"):
+            imagen_img = f'<img src="{r["topic_key"]}/imagen4.png" alt="Imagen 4" />'
+            imagen_label = f'Imagen 4 ({r["imagen_time"]:.1f}s)'
+        elif r.get("imagen_error"):
+            imagen_img = f'<div class="error">FAILED: {r["imagen_error"]}</div>'
+            imagen_label = "Imagen 4 (FAILED)"
+        else:
+            imagen_label = "Imagen 4"
+
+        gemini_img = ""
+        if r.get("gemini_path"):
+            gemini_img = f'<img src="{r["topic_key"]}/gemini3pro.png" alt="Gemini 3 Pro" />'
+            gemini_label = f'Gemini 3 Pro Image Preview ({r["gemini_time"]:.1f}s)'
+        elif r.get("gemini_error"):
+            gemini_img = f'<div class="error">FAILED: {r["gemini_error"]}</div>'
+            gemini_label = "Gemini 3 Pro (FAILED)"
+        else:
+            gemini_label = "Gemini 3 Pro"
+
+        rows += f"""
+        <div class="topic-section">
+            <h2>{topic_name}</h2>
+            <p class="meta">Layout: <strong>{layout}</strong> &nbsp;|&nbsp; Style: <strong>{style}</strong></p>
+            <div class="comparison-grid">
+                <div class="model-col">
+                    <h3>{imagen_label}</h3>
+                    {imagen_img}
+                </div>
+                <div class="model-col">
+                    <h3>{gemini_label}</h3>
+                    {gemini_img}
+                </div>
+            </div>
+            <details>
+                <summary>View prompt ({len(r['prompt'])} chars)</summary>
+                <pre>{r['prompt'][:3000]}{'...' if len(r['prompt']) > 3000 else ''}</pre>
+            </details>
+        </div>
+        """
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Imagen 4 vs Gemini 3 Pro — Model Comparison</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            padding: 2rem;
+        }}
+        h1 {{
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            color: #fff;
+        }}
+        .subtitle {{
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }}
+        .topic-section {{
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }}
+        .topic-section h2 {{
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }}
+        .meta {{
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }}
+        .comparison-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }}
+        .model-col h3 {{
+            font-size: 0.95rem;
+            color: #aaa;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }}
+        .model-col img {{
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }}
+        .error {{
+            background: #2a1010;
+            color: #ff6b6b;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }}
+        details {{
+            margin-top: 1rem;
+        }}
+        summary {{
+            cursor: pointer;
+            color: #888;
+            font-size: 0.85rem;
+        }}
+        pre {{
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-size: 0.75rem;
+            color: #ccc;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+    </style>
+</head>
+<body>
+    <h1>Imagen 4 vs Gemini 3 Pro Image Preview</h1>
+    <p class="subtitle">Same prompt, different image generation models — side-by-side comparison</p>
+    {rows}
+</body>
+</html>"""
+
+
+async def main():
+    print("=" * 60)
+    print("  IMAGEN 4 vs GEMINI 3 PRO — MODEL COMPARISON")
+    print("=" * 60)
+    print(f"\nOutput directory: {OUTPUT_DIR}")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Run pipeline for all 3 topics (sequentially to avoid rate limits)
+    pipeline_results = []
+    for key, info in TOPICS.items():
+        result = await run_pipeline_for_topic(key, info["topic"])
+        pipeline_results.append(result)
+
+    # Generate images for all topics
+    print(f"\n{'='*60}")
+    print("  GENERATING IMAGES (6 total: 3 topics × 2 models)")
+    print(f"{'='*60}")
+
+    for result in pipeline_results:
+        await generate_images_for_topic(result)
+
+    # Generate HTML comparison page
+    html = generate_html(pipeline_results)
+    html_path = OUTPUT_DIR / "comparison.html"
+    html_path.write_text(html, encoding="utf-8")
+    print(f"\n{'='*60}")
+    print(f"  DONE! Comparison page: {html_path}")
+    print(f"{'='*60}")
+
+    return pipeline_results
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

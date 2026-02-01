@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # Model settings
     claude_model: str = "claude-sonnet-4-20250514"
-    imagen_model: str = "imagen-4.0-generate-preview-06-06"
+    image_model: str = "gemini-3-pro-image-preview"
 
     # Server
     cors_origins: list[str] = ["http://localhost:3000"]

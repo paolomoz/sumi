@@ -1,5 +1,6 @@
-"""Single-stage image generation using Google Imagen 4."""
+"""Image generation using Gemini 3 Pro Image Preview (multimodal)."""
 
+import base64
 from pathlib import Path
 
 from google import genai
@@ -17,32 +18,36 @@ def _get_client() -> genai.Client:
 async def generate_image(
     prompt: str,
     output_path: str,
-    aspect_ratio: str = "9:16",
+    aspect_ratio: str = "16:9",
 ) -> str:
-    """Generate an infographic image using Google Imagen 4.
+    """Generate an infographic image using Gemini 3 Pro Image Preview.
 
     Returns the path to the saved image file.
     """
     client = _get_client()
 
-    response = await client.aio.models.generate_images(
-        model=settings.imagen_model,
-        prompt=prompt,
-        config=types.GenerateImagesConfig(
-            number_of_images=1,
-            aspect_ratio=aspect_ratio,
-            safety_filter_level="BLOCK_LOW_AND_ABOVE",
+    # Gemini multimodal takes aspect ratio as part of the prompt text
+    full_prompt = f"{prompt}\n\nAspect ratio: {aspect_ratio}."
+
+    response = await client.aio.models.generate_content(
+        model=settings.image_model,
+        contents=full_prompt,
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
         ),
     )
 
-    if not response.generated_images:
-        raise RuntimeError("Imagen returned no images")
+    # Extract image from response parts
+    for candidate in (response.candidates or []):
+        for part in (candidate.content.parts or []):
+            if part.inline_data and part.inline_data.data:
+                image_bytes = part.inline_data.data
+                if isinstance(image_bytes, str):
+                    image_bytes = base64.b64decode(image_bytes)
 
-    image = response.generated_images[0]
-    image_bytes = image.image.image_bytes
+                output = Path(output_path)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_bytes(image_bytes)
+                return str(output)
 
-    output = Path(output_path)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(image_bytes)
-
-    return str(output)
+    raise RuntimeError("Gemini returned no image in response")

@@ -17,7 +17,7 @@ class JobManager:
         style_id: str | None = None,
         layout_id: str | None = None,
         text_labels: list[str] | None = None,
-        aspect_ratio: str = "9:16",
+        aspect_ratio: str = "16:9",
         language: str = "English",
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]

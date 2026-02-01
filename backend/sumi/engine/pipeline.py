@@ -62,12 +62,15 @@ async def run_pipeline(job: Job):
         job.layout_name = layout.name if layout else selected_layout_id
         job.style_name = style.name if style else selected_style_id
 
-        # Step 4: Craft prompt (synchronous — no LLM call)
+        # Step 4: Craft prompt (LLM-assisted creative synthesis)
         await job_manager.update_status(job.id, JobStatus.CRAFTING)
-        prompt = craft_prompt(
+        analysis_md = analysis.get("analysis_markdown", "") if isinstance(analysis, dict) else str(analysis)
+        prompt = await craft_prompt(
             layout_id=selected_layout_id,
             style_id=selected_style_id,
             structured_content=structured_content,
+            topic=job.topic,
+            analysis=analysis_md,
             aspect_ratio=job.aspect_ratio,
             language=job.language,
         )
@@ -77,6 +80,9 @@ async def run_pipeline(job: Job):
         await job_manager.update_status(job.id, JobStatus.GENERATING)
         output_dir = Path(settings.output_dir) / job.id
         output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save prompt for debugging
+        (output_dir / "prompt.md").write_text(prompt, encoding="utf-8")
 
         image_path = str(output_dir / "infographic.png")
         await generate_image(

@@ -42,7 +42,7 @@ const initialState = {
   textLabels: [],
   selectedLayoutId: null as string | null,
   selectedStyleId: null as string | null,
-  aspectRatio: "9:16",
+  aspectRatio: "16:9",
   language: "English",
   jobId: null as string | null,
   recommendations: [] as CombinationRecommendation[],
