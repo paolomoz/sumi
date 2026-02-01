@@ -12,6 +12,7 @@ interface GenerationState {
   textLabels: string[];
   selectedStyleId: string | null;
   aspectRatio: string;
+  outputMode: "visual" | "textual";
 
   // Results
   jobId: string | null;
@@ -25,6 +26,7 @@ interface GenerationState {
   setTextLabels: (labels: string[]) => void;
   selectStyle: (id: string) => void;
   setAspectRatio: (ratio: string) => void;
+  setOutputMode: (mode: "visual" | "textual") => void;
   setJobId: (id: string) => void;
   setRecommendations: (recs: StyleRecommendation[]) => void;
   reset: () => void;
@@ -37,6 +39,7 @@ const initialState = {
   textLabels: [],
   selectedStyleId: null,
   aspectRatio: "9:16",
+  outputMode: "visual" as "visual" | "textual",
   jobId: null,
   recommendations: [],
 };
@@ -51,6 +54,7 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   setTextLabels: (labels) => set({ textLabels: labels }),
   selectStyle: (id) => set({ selectedStyleId: id }),
   setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
+  setOutputMode: (mode) => set({ outputMode: mode }),
   setJobId: (id) => set({ jobId: id }),
   setRecommendations: (recs) => set({ recommendations: recs }),
   reset: () => set(initialState),

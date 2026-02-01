@@ -44,6 +44,7 @@ class Job:
     style_id: str | None = None
     text_labels: list[str] | None = None
     aspect_ratio: str = "9:16"
+    output_mode: str = "visual"
     status: JobStatus = JobStatus.QUEUED
     error: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)

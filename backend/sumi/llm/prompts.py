@@ -52,6 +52,12 @@ You are an expert prompt engineer for AI image generation. You create two prompt
 - Include style consistency notes referencing the base image
 - Specify font mood (e.g., "elegant serif", "bold sans-serif", "hand-lettered")
 
+## OUTPUT MODE:
+The user will specify an output mode — either "visual" or "textual":
+
+- **visual**: Emphasize visual richness and minimize text labels. The Imagen prompt should focus on elaborate composition, detailed artwork, and large artistic areas. Only include the title and 2-3 key terms as text labels. The Ideogram prompt should use sparse, elegant labels with generous whitespace.
+- **textual**: Use a simpler base composition with many open zones reserved for text. Include ALL provided text_labels plus additional explanatory descriptions and data points. The Ideogram prompt should render dense informational text with clear hierarchy — headings, subheadings, bullet points, and annotations throughout the composition.
+
 Return a JSON object:
 {
   "imagen_prompt": "...",
@@ -89,5 +95,7 @@ Style guide:
 
 Text labels to include in the infographic:
 {text_labels}
+
+Output mode: {output_mode}
 
 Create the two-stage prompts (Imagen base + Ideogram text overlay)."""

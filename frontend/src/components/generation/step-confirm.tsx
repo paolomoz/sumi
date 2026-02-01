@@ -7,7 +7,7 @@ import { useStartGeneration } from "@/lib/hooks/use-generation";
 import { stylesCatalog } from "@/data/styles-catalog";
 
 export function StepConfirm() {
-  const { topic, selectedStyleId, aspectRatio, setStep, setJobId } = useGenerationStore();
+  const { topic, selectedStyleId, aspectRatio, outputMode, setOutputMode, setStep, setJobId } = useGenerationStore();
   const mutation = useStartGeneration();
 
   const style = stylesCatalog.find((s) => s.id === selectedStyleId);
@@ -18,6 +18,7 @@ export function StepConfirm() {
         topic,
         style_id: selectedStyleId || undefined,
         aspect_ratio: aspectRatio,
+        output_mode: outputMode,
       });
       setJobId(result.job_id);
       setStep("progress");
@@ -39,6 +40,36 @@ export function StepConfirm() {
         <Card>
           <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Topic</div>
           <p className="text-sm">{topic}</p>
+        </Card>
+
+        <Card>
+          <div className="text-xs font-medium text-muted uppercase tracking-wider mb-2">Output Mode</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setOutputMode("visual")}
+              className={`rounded-[var(--radius-md)] border p-3 text-left transition-all ${
+                outputMode === "visual"
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              <p className="text-sm font-medium">Mostly Visual</p>
+              <p className="text-xs text-muted mt-0.5">Rich artwork with minimal text labels</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOutputMode("textual")}
+              className={`rounded-[var(--radius-md)] border p-3 text-left transition-all ${
+                outputMode === "textual"
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              <p className="text-sm font-medium">Mostly Text</p>
+              <p className="text-xs text-muted mt-0.5">Detailed text with supporting artwork</p>
+            </button>
+          </div>
         </Card>
 
         <Card>

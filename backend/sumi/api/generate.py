@@ -25,6 +25,7 @@ async def create_generation(request: GenerateRequest):
         style_id=request.style_id,
         text_labels=request.text_labels,
         aspect_ratio=request.aspect_ratio,
+        output_mode=request.output_mode,
     )
     # Launch pipeline as background task
     asyncio.create_task(run_pipeline(job))

@@ -9,6 +9,7 @@ async def craft_prompts(
     analysis: dict,
     style_id: str,
     text_labels: list[str] | None = None,
+    output_mode: str = "visual",
 ) -> dict:
     """Create Imagen and Ideogram prompts for the two-stage pipeline."""
     catalog = get_catalog()
@@ -37,6 +38,7 @@ async def craft_prompts(
         style_id=style.id,
         style_guide=guide,
         text_labels=json.dumps(labels),
+        output_mode=output_mode,
     )
 
     result = await chat_json(

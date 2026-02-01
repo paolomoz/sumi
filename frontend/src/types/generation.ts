@@ -5,6 +5,7 @@ export interface GenerateRequest {
   style_id?: string;
   text_labels?: string[];
   aspect_ratio?: string;
+  output_mode?: string;
 }
 
 export interface JobProgress {

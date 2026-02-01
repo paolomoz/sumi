@@ -41,7 +41,7 @@ async def run_pipeline(job: Job):
         # Step 3: Craft prompts
         await job_manager.update_status(job.id, JobStatus.CRAFTING)
         text_labels = job.text_labels or analysis.get("text_labels", [])
-        prompts = await craft_prompts(analysis, selected_style_id, text_labels)
+        prompts = await craft_prompts(analysis, selected_style_id, text_labels, output_mode=job.output_mode)
         job.imagen_prompt = prompts["imagen_prompt"]
         job.ideogram_prompt = prompts["ideogram_prompt"]
 

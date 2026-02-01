@@ -17,6 +17,7 @@ class JobManager:
         style_id: str | None = None,
         text_labels: list[str] | None = None,
         aspect_ratio: str = "9:16",
+        output_mode: str = "visual",
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]
         job = Job(
@@ -25,6 +26,7 @@ class JobManager:
             style_id=style_id,
             text_labels=text_labels,
             aspect_ratio=aspect_ratio,
+            output_mode=output_mode,
         )
         self._jobs[job_id] = job
         return job

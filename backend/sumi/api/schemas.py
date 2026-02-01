@@ -41,6 +41,7 @@ class GenerateRequest(BaseModel):
     style_id: str | None = None
     text_labels: list[str] | None = None
     aspect_ratio: str = "9:16"
+    output_mode: str = "visual"  # "visual" or "textual"
 
 
 class GenerateResponse(BaseModel):
