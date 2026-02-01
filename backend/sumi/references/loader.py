@@ -10,6 +10,22 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent / "data"
 
 
+_NAME_OVERRIDES: dict[str, str] = {
+    "ukiyo-e": "Ukiyo-e",
+    "art-nouveau": "Art Nouveau",
+    "ui-wireframe": "UI Wireframe",
+    "ikea-manual": "IKEA Manual",
+    "hub-spoke": "Hub & Spoke",
+}
+
+
+def _kebab_to_title(s: str) -> str:
+    """Convert 'cyberpunk-neon' → 'Cyberpunk Neon', with overrides for special names."""
+    if s in _NAME_OVERRIDES:
+        return _NAME_OVERRIDES[s]
+    return " ".join(word.capitalize() for word in s.split("-"))
+
+
 @dataclass
 class LayoutRef:
     id: str
@@ -62,8 +78,10 @@ class ReferenceStore:
 
         # Name from first H1 — strip markdown heading and any trailing annotations
         name_line = lines[0].lstrip("# ").strip()
-        # The name is the id itself (layouts use kebab-case ids as names)
         name = name_line.split("(")[0].strip()
+        # If the heading is just the kebab-case ID, convert to title case
+        if name == layout_id:
+            name = _kebab_to_title(layout_id)
 
         # Extract sections
         best_for = self._extract_list_items(text, "Best For")
@@ -99,6 +117,9 @@ class ReferenceStore:
         # Name from first H1, strip annotations like (DEFAULT)
         name_line = lines[0].lstrip("# ").strip()
         name = re.sub(r"\s*\(.*?\)\s*$", "", name_line).strip()
+        # If the heading is just the kebab-case ID, convert to title case
+        if name == style_id:
+            name = _kebab_to_title(style_id)
 
         # Best For — may be a list or a paragraph
         best_for = self._extract_section_text(text, "Best For")
