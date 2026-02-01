@@ -1,4 +1,4 @@
-import { Style, StyleRecommendation } from "@/types/style";
+import { Layout, Style, CombinationRecommendation } from "@/types/style";
 import { GenerateRequest, JobStatus } from "@/types/generation";
 
 const API_BASE = "/api";
@@ -15,32 +15,29 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 
+// Layouts
+export async function fetchLayouts(): Promise<Layout[]> {
+  return fetchJson<Layout[]>("/layouts");
+}
+
+export async function fetchLayout(layoutId: string): Promise<Layout> {
+  return fetchJson<Layout>(`/layouts/${layoutId}`);
+}
+
 // Styles
-export async function fetchStyles(params?: {
-  category?: string;
-  mood?: string;
-  min_rating?: number;
-  best_for?: string;
-  search?: string;
-}): Promise<Style[]> {
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) searchParams.set(key, String(value));
-    });
-  }
-  const query = searchParams.toString();
-  return fetchJson<Style[]>(`/styles${query ? `?${query}` : ""}`);
+export async function fetchStyles(): Promise<Style[]> {
+  return fetchJson<Style[]>("/styles");
 }
 
 export async function fetchStyle(styleId: string): Promise<Style> {
   return fetchJson<Style>(`/styles/${styleId}`);
 }
 
+// Recommendations
 export async function fetchRecommendations(
   topic: string
-): Promise<{ recommendations: StyleRecommendation[] }> {
-  return fetchJson(`/styles/recommend`, {
+): Promise<{ recommendations: CombinationRecommendation[] }> {
+  return fetchJson(`/recommend`, {
     method: "POST",
     body: JSON.stringify({ topic }),
   });

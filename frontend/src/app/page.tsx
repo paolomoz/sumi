@@ -3,22 +3,15 @@
 import { ChatInput } from "@/components/chat/chat-input";
 import { SkillChips } from "@/components/chat/skill-chips";
 import { useGenerationStore } from "@/lib/stores/generation-store";
-import { useUIStore } from "@/lib/stores/ui-store";
-import { StyleCatalogView } from "@/components/styles/style-catalog-view";
 
 export default function Home() {
   const { openWizard, setTopic, setStep } = useGenerationStore();
-  const { currentView } = useUIStore();
 
   const handleSubmit = (text: string) => {
     openWizard();
     setTopic(text);
-    setStep("style");
+    setStep("layout");
   };
-
-  if (currentView === "catalog") {
-    return <StyleCatalogView />;
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-4">
@@ -29,7 +22,7 @@ export default function Home() {
             What can I create for you?
           </h1>
           <p className="text-muted text-base">
-            Describe a topic and choose from 126 artistic styles to generate a beautiful infographic.
+            Describe a topic and we'll generate a beautiful infographic with 20 layouts and 19 artistic styles.
           </p>
         </div>
 
@@ -55,13 +48,13 @@ export default function Home() {
             />
             <HowItWorksStep
               number={2}
-              title="Choose a style"
-              description="Pick from 126 artistic styles — from Ukiyo-e to Cyberpunk."
+              title="Choose layout & style"
+              description="Pick from 20 layouts and 19 artistic styles."
             />
             <HowItWorksStep
               number={3}
               title="Generate & download"
-              description="AI creates your infographic with accurate, styled typography."
+              description="AI creates your infographic with Imagen 4."
             />
           </div>
         </div>

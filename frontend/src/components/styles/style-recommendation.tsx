@@ -1,18 +1,18 @@
 "use client";
 
-import { StyleRecommendation as RecommendationType } from "@/types/style";
+import { CombinationRecommendation } from "@/types/style";
 import { cn } from "@/lib/utils";
 
 interface StyleRecommendationProps {
-  recommendations: RecommendationType[];
+  recommendations: CombinationRecommendation[];
   selectedId?: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (styleId: string, layoutId?: string) => void;
 }
 
 const approachLabels = {
-  artistic: { label: "Artistic", desc: "Most visually striking", color: "#9333EA" },
-  technical: { label: "Technical", desc: "Clearest information display", color: "#2563EB" },
-  accessible: { label: "Accessible", desc: "Broadest appeal", color: "#16A34A" },
+  best_match: { label: "Best Match", desc: "Most appropriate combination", color: "#16A34A" },
+  creative: { label: "Creative", desc: "Unexpected, visually striking", color: "#9333EA" },
+  accessible: { label: "Accessible", desc: "Broadest appeal", color: "#2563EB" },
 };
 
 export function StyleRecommendationPanel({
@@ -28,7 +28,7 @@ export function StyleRecommendationPanel({
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-primary">
           <path d="M8 1l2 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
         </svg>
-        <h3 className="text-sm font-medium">Recommended for your topic</h3>
+        <h3 className="text-sm font-medium">Recommended combinations</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -36,9 +36,9 @@ export function StyleRecommendationPanel({
           const approach = approachLabels[rec.approach] || approachLabels.accessible;
           return (
             <button
-              key={rec.style_id}
+              key={`${rec.layout_id}-${rec.style_id}`}
               type="button"
-              onClick={() => onSelect(rec.style_id)}
+              onClick={() => onSelect(rec.style_id, rec.layout_id)}
               className={cn(
                 "text-left rounded-[var(--radius-lg)] border p-4 transition-all cursor-pointer",
                 "hover:shadow-md",
@@ -55,7 +55,8 @@ export function StyleRecommendationPanel({
                 {approach.label}
               </div>
 
-              <h4 className="font-medium text-sm mb-1">{rec.style_name}</h4>
+              <h4 className="font-medium text-sm mb-0.5">{rec.style_name}</h4>
+              <p className="text-xs text-muted mb-1">{rec.layout_name} layout</p>
               <p className="text-xs text-muted line-clamp-2">{rec.rationale}</p>
             </button>
           );

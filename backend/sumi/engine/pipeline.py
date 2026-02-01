@@ -1,75 +1,90 @@
-import asyncio
 from pathlib import Path
 
 from sumi.config import settings
 from sumi.jobs.models import Job, JobStatus
 from sumi.jobs.manager import job_manager
 from sumi.engine.content_analyzer import analyze_content
-from sumi.engine.style_recommender import recommend_styles
-from sumi.engine.prompt_crafter import craft_prompts
-from sumi.engine.imagen_generator import generate_base_image
-from sumi.engine.ideogram_generator import generate_text_overlay
-from sumi.catalog.styles import get_catalog
+from sumi.engine.content_structurer import generate_structured_content
+from sumi.engine.combination_recommender import recommend_combinations
+from sumi.engine.prompt_crafter import craft_prompt
+from sumi.engine.image_generator import generate_image
+from sumi.references.loader import get_references
 
 
 async def run_pipeline(job: Job):
-    """Execute the full generation pipeline for a job."""
+    """Execute the full 5-step generation pipeline for a job."""
     try:
         # Step 1: Analyze content
         await job_manager.update_status(job.id, JobStatus.ANALYZING)
         analysis = await analyze_content(job.topic)
         job.analysis = analysis
 
-        # Step 2: Recommend styles (if no style selected)
+        # Step 2: Generate structured content
+        await job_manager.update_status(job.id, JobStatus.STRUCTURING)
+        structured_content = await generate_structured_content(job.topic, analysis)
+        job.structured_content = structured_content
+
+        # Step 3: Recommend combinations + select layout/style
         await job_manager.update_status(job.id, JobStatus.RECOMMENDING)
-        recommendations = await recommend_styles(job.topic, analysis=analysis)
+        recommendations = await recommend_combinations(job.topic, analysis)
         job.recommendations = recommendations
 
-        # Select style
-        if job.style_id:
+        # Select layout and style
+        refs = get_references()
+        if job.layout_id and job.style_id:
+            selected_layout_id = job.layout_id
             selected_style_id = job.style_id
+        elif job.layout_id:
+            selected_layout_id = job.layout_id
+            # Pick style from first recommendation or fallback
+            selected_style_id = (
+                job.style_id
+                or (recommendations[0]["style_id"] if recommendations else "craft-handmade")
+            )
+        elif job.style_id:
+            selected_style_id = job.style_id
+            # Pick layout from first recommendation or fallback
+            selected_layout_id = (
+                recommendations[0]["layout_id"] if recommendations else "bento-grid"
+            )
         elif recommendations:
+            selected_layout_id = recommendations[0]["layout_id"]
             selected_style_id = recommendations[0]["style_id"]
         else:
-            selected_style_id = "ukiyo-e"  # fallback
+            selected_layout_id = "bento-grid"
+            selected_style_id = "craft-handmade"
 
+        job.layout_id = selected_layout_id
         job.style_id = selected_style_id
-        catalog = get_catalog()
-        style = catalog.get(selected_style_id)
+
+        layout = refs.get_layout(selected_layout_id)
+        style = refs.get_style(selected_style_id)
+        job.layout_name = layout.name if layout else selected_layout_id
         job.style_name = style.name if style else selected_style_id
 
-        # Step 3: Craft prompts
+        # Step 4: Craft prompt (synchronous — no LLM call)
         await job_manager.update_status(job.id, JobStatus.CRAFTING)
-        text_labels = job.text_labels or analysis.get("text_labels", [])
-        prompts = await craft_prompts(analysis, selected_style_id, text_labels, output_mode=job.output_mode)
-        job.imagen_prompt = prompts["imagen_prompt"]
-        job.ideogram_prompt = prompts["ideogram_prompt"]
+        prompt = craft_prompt(
+            layout_id=selected_layout_id,
+            style_id=selected_style_id,
+            structured_content=structured_content,
+            aspect_ratio=job.aspect_ratio,
+            language=job.language,
+        )
+        job.prompt = prompt
 
-        aspect_ratio = prompts.get("aspect_ratio", job.aspect_ratio)
-
-        # Step 4: Generate base image with Imagen 4
-        await job_manager.update_status(job.id, JobStatus.GENERATING_BASE)
+        # Step 5: Generate image
+        await job_manager.update_status(job.id, JobStatus.GENERATING)
         output_dir = Path(settings.output_dir) / job.id
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        base_path = str(output_dir / "base.png")
-        await generate_base_image(
-            prompt=job.imagen_prompt,
-            output_path=base_path,
-            aspect_ratio=aspect_ratio,
+        image_path = str(output_dir / "infographic.png")
+        await generate_image(
+            prompt=prompt,
+            output_path=image_path,
+            aspect_ratio=job.aspect_ratio,
         )
-        job.base_image_url = f"/output/{job.id}/base.png"
-
-        # Step 5: Generate final image with Ideogram V3
-        await job_manager.update_status(job.id, JobStatus.GENERATING_TEXT)
-        final_path = str(output_dir / "final.png")
-        await generate_text_overlay(
-            prompt=job.ideogram_prompt,
-            style_reference_path=base_path,
-            output_path=final_path,
-            aspect_ratio=aspect_ratio,
-        )
-        job.final_image_url = f"/output/{job.id}/final.png"
+        job.image_url = f"/output/{job.id}/infographic.png"
 
         # Done
         await job_manager.update_status(job.id, JobStatus.COMPLETED)

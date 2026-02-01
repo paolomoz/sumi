@@ -20,13 +20,14 @@ export function StepResult() {
       <div className="text-center">
         <h2 className="text-xl font-semibold mb-1">Your infographic is ready</h2>
         <p className="text-sm text-muted">
-          Created in {result.style_name} style
+          {result.layout_name && result.style_name
+            ? `${result.layout_name} layout in ${result.style_name} style`
+            : `Created in ${result.style_name || "artistic"} style`}
         </p>
       </div>
 
       <ResultViewer
-        imageUrl={result.final_image_url}
-        baseImageUrl={result.base_image_url}
+        imageUrl={result.image_url}
         styleName={result.style_name}
       />
 

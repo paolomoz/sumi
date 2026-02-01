@@ -8,10 +8,10 @@ import { useEffect } from "react";
 
 const pipelineSteps = [
   { key: "analyzing", label: "Analyzing Content", icon: "magnify" },
-  { key: "recommending", label: "Finding Styles", icon: "palette" },
-  { key: "crafting", label: "Crafting Prompts", icon: "pen" },
-  { key: "generating_base", label: "Generating Artwork", icon: "image" },
-  { key: "generating_text", label: "Rendering Text", icon: "type" },
+  { key: "structuring", label: "Structuring Content", icon: "layers" },
+  { key: "recommending", label: "Finding Best Combinations", icon: "palette" },
+  { key: "crafting", label: "Crafting Prompt", icon: "pen" },
+  { key: "generating", label: "Generating Infographic", icon: "image" },
 ];
 
 export function StepProgress() {

@@ -7,17 +7,13 @@ import { cn } from "@/lib/utils";
 
 interface ResultViewerProps {
   imageUrl: string | null;
-  baseImageUrl?: string | null;
   styleName?: string | null;
 }
 
-export function ResultViewer({ imageUrl, baseImageUrl, styleName }: ResultViewerProps) {
-  const [showBase, setShowBase] = useState(false);
+export function ResultViewer({ imageUrl, styleName }: ResultViewerProps) {
   const [zoomed, setZoomed] = useState(false);
 
-  const displayUrl = showBase && baseImageUrl ? baseImageUrl : imageUrl;
-
-  if (!displayUrl) {
+  if (!imageUrl) {
     return (
       <div className="aspect-[9/16] max-w-sm mx-auto rounded-[var(--radius-lg)] bg-accent flex items-center justify-center text-sm text-muted">
         No image available
@@ -36,7 +32,7 @@ export function ResultViewer({ imageUrl, baseImageUrl, styleName }: ResultViewer
         onClick={() => setZoomed(!zoomed)}
       >
         <img
-          src={displayUrl}
+          src={imageUrl}
           alt={`Infographic in ${styleName || "artistic"} style`}
           className="w-full h-auto"
         />
@@ -44,22 +40,12 @@ export function ResultViewer({ imageUrl, baseImageUrl, styleName }: ResultViewer
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-3">
-        {baseImageUrl && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowBase(!showBase)}
-          >
-            {showBase ? "Show Final" : "Show Base Art"}
-          </Button>
-        )}
-
         <Button
           variant="secondary"
           size="sm"
           onClick={() =>
             downloadFile(
-              displayUrl,
+              imageUrl,
               `sumi-infographic-${Date.now()}.png`
             )
           }

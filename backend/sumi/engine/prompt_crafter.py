@@ -1,69 +1,69 @@
-import json
+"""Pure template substitution prompt crafter — no LLM call needed."""
 
-from sumi.llm.client import chat_json
-from sumi.llm.prompts import PROMPT_CRAFTING_SYSTEM, PROMPT_CRAFTING_USER
-from sumi.catalog.styles import get_catalog
+import re
+
+from sumi.references.loader import get_references
 
 
-async def craft_prompts(
-    analysis: dict,
+def craft_prompt(
+    layout_id: str,
     style_id: str,
+    structured_content: str,
     text_labels: list[str] | None = None,
-    output_mode: str = "visual",
-) -> dict:
-    """Create Imagen and Ideogram prompts for the two-stage pipeline."""
-    catalog = get_catalog()
-    style = catalog.get(style_id)
+    aspect_ratio: str = "9:16",
+    language: str = "English",
+) -> str:
+    """Build the final image generation prompt via template substitution.
+
+    Uses base-prompt.md as the template with placeholder replacement.
+    This is a synchronous function — no async/LLM needed.
+    """
+    refs = get_references()
+    template = refs.get_framework("base-prompt")
+
+    layout = refs.get_layout(layout_id)
+    style = refs.get_style(style_id)
+
+    if not layout:
+        raise ValueError(f"Layout '{layout_id}' not found in references")
     if not style:
-        raise ValueError(f"Style '{style_id}' not found in catalog")
+        raise ValueError(f"Style '{style_id}' not found in references")
 
-    guide = catalog.get_guide(style_id)
-    if not guide:
-        # Generate a minimal guide from catalog metadata
-        guide = (
-            f"Style: {style.name}\n"
-            f"Category: {style.category}\n"
-            f"Mood: {', '.join(style.mood)}\n"
-            f"Colors: {', '.join(style.color_palette)}\n"
-            f"Description: {style.description}\n"
-        )
+    # Format text labels
+    if text_labels:
+        labels_text = "\n".join(f"- {label}" for label in text_labels)
+    else:
+        # Extract labels from structured content (lines starting with - Headline/Label)
+        labels_text = _extract_labels_from_content(structured_content)
 
-    labels = text_labels or analysis.get("text_labels", [])
+    # Perform template substitution
+    prompt = template
+    prompt = prompt.replace("{{LAYOUT}}", layout.name)
+    prompt = prompt.replace("{{STYLE}}", style.name)
+    prompt = prompt.replace("{{LAYOUT_GUIDELINES}}", layout.content)
+    prompt = prompt.replace("{{STYLE_GUIDELINES}}", style.content)
+    prompt = prompt.replace("{{CONTENT}}", structured_content)
+    prompt = prompt.replace("{{TEXT_LABELS}}", labels_text)
+    prompt = prompt.replace("{{ASPECT_RATIO}}", aspect_ratio)
+    prompt = prompt.replace("{{LANGUAGE}}", language)
+
+    return prompt
+
+
+def _extract_labels_from_content(content: str) -> str:
+    """Extract text labels from structured content markdown."""
+    labels = []
+    for line in content.split("\n"):
+        stripped = line.strip()
+        # Match lines like: - Headline: "Some text"
+        # or - Labels: "Label 1", "Label 2"
+        if any(
+            stripped.startswith(f"- {prefix}:")
+            for prefix in ("Headline", "Subhead", "Labels", "Label", "Main number", "Action")
+        ):
+            # Extract quoted strings
+            quoted = re.findall(r'"([^"]+)"', stripped)
+            labels.extend(quoted)
     if not labels:
-        labels = analysis.get("key_concepts", [])
-
-    user_message = PROMPT_CRAFTING_USER.format(
-        analysis_json=json.dumps(analysis, indent=2),
-        style_name=style.name,
-        style_id=style.id,
-        style_guide=guide,
-        text_labels=json.dumps(labels),
-        output_mode=output_mode,
-    )
-
-    result = await chat_json(
-        system=PROMPT_CRAFTING_SYSTEM,
-        user_message=user_message,
-        temperature=0.7,
-    )
-
-    # Enforce the critical rule: Imagen prompt must end with the no-text suffix
-    no_text_suffix = (
-        "no text, no labels, no words, no letters, no writing, "
-        "no captions, no signs, purely visual"
-    )
-    imagen_prompt = result.get("imagen_prompt", "")
-    if not imagen_prompt.rstrip().endswith("purely visual"):
-        imagen_prompt = imagen_prompt.rstrip().rstrip(",").rstrip(".") + ", " + no_text_suffix
-        result["imagen_prompt"] = imagen_prompt
-
-    # Enforce forbidden words in Imagen prompt
-    forbidden = ["infographic", "diagram", "educational", "chart", "annotated"]
-    for word in forbidden:
-        if word.lower() in result["imagen_prompt"].lower():
-            result["imagen_prompt"] = result["imagen_prompt"].replace(word, "illustration")
-            result["imagen_prompt"] = result["imagen_prompt"].replace(
-                word.capitalize(), "Illustration"
-            )
-
-    return result
+        return "(derive text labels from the content above)"
+    return "\n".join(f"- {label}" for label in labels)

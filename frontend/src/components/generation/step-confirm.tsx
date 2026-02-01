@@ -4,21 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGenerationStore } from "@/lib/stores/generation-store";
 import { useStartGeneration } from "@/lib/hooks/use-generation";
-import { stylesCatalog } from "@/data/styles-catalog";
+
+const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese", "Chinese", "Korean"];
 
 export function StepConfirm() {
-  const { topic, selectedStyleId, aspectRatio, outputMode, setOutputMode, setStep, setJobId } = useGenerationStore();
+  const {
+    topic,
+    selectedStyleId,
+    selectedLayoutId,
+    aspectRatio,
+    language,
+    setLanguage,
+    setStep,
+    setJobId,
+  } = useGenerationStore();
   const mutation = useStartGeneration();
-
-  const style = stylesCatalog.find((s) => s.id === selectedStyleId);
 
   const handleGenerate = async () => {
     try {
       const result = await mutation.mutateAsync({
         topic,
         style_id: selectedStyleId || undefined,
+        layout_id: selectedLayoutId || undefined,
         aspect_ratio: aspectRatio,
-        output_mode: outputMode,
+        language,
       });
       setJobId(result.job_id);
       setStep("progress");
@@ -43,51 +52,32 @@ export function StepConfirm() {
         </Card>
 
         <Card>
-          <div className="text-xs font-medium text-muted uppercase tracking-wider mb-2">Output Mode</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setOutputMode("visual")}
-              className={`rounded-[var(--radius-md)] border p-3 text-left transition-all ${
-                outputMode === "visual"
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-border hover:border-muted-foreground/30"
-              }`}
-            >
-              <p className="text-sm font-medium">Mostly Visual</p>
-              <p className="text-xs text-muted mt-0.5">Rich artwork with minimal text labels</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOutputMode("textual")}
-              className={`rounded-[var(--radius-md)] border p-3 text-left transition-all ${
-                outputMode === "textual"
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-border hover:border-muted-foreground/30"
-              }`}
-            >
-              <p className="text-sm font-medium">Mostly Text</p>
-              <p className="text-xs text-muted mt-0.5">Detailed text with supporting artwork</p>
-            </button>
-          </div>
+          <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Layout</div>
+          <p className="text-sm">{selectedLayoutId || "Auto-selected"}</p>
         </Card>
 
         <Card>
           <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Style</div>
-          <div className="flex items-center gap-3">
-            {style && (
-              <>
-                <div className="flex h-10 w-10 shrink-0 overflow-hidden rounded-[var(--radius-md)]">
-                  {style.color_palette.slice(0, 4).map((c, i) => (
-                    <div key={i} className="flex-1 h-full" style={{ backgroundColor: c }} />
-                  ))}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{style.name}</p>
-                  <p className="text-xs text-muted">{style.category}</p>
-                </div>
-              </>
-            )}
+          <p className="text-sm">{selectedStyleId || "Auto-selected"}</p>
+        </Card>
+
+        <Card>
+          <div className="text-xs font-medium text-muted uppercase tracking-wider mb-2">Language</div>
+          <div className="flex flex-wrap gap-2">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setLanguage(lang)}
+                className={`rounded-[var(--radius-full)] px-3 py-1 text-xs font-medium transition-all ${
+                  language === lang
+                    ? "bg-foreground text-background"
+                    : "bg-accent text-muted hover:text-foreground"
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
           </div>
         </Card>
 

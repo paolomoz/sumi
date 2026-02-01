@@ -1,11 +1,12 @@
-import { StyleRecommendation } from "./style";
+import { CombinationRecommendation } from "./style";
 
 export interface GenerateRequest {
   topic: string;
   style_id?: string;
+  layout_id?: string;
   text_labels?: string[];
   aspect_ratio?: string;
-  output_mode?: string;
+  language?: string;
 }
 
 export interface JobProgress {
@@ -15,12 +16,13 @@ export interface JobProgress {
 }
 
 export interface JobResult {
-  base_image_url: string | null;
-  final_image_url: string | null;
+  image_url: string | null;
+  layout_id: string | null;
+  layout_name: string | null;
   style_id: string | null;
   style_name: string | null;
   analysis: Record<string, unknown> | null;
-  recommendations: StyleRecommendation[] | null;
+  recommendations: CombinationRecommendation[] | null;
 }
 
 export interface JobStatus {
@@ -31,4 +33,4 @@ export interface JobStatus {
   error: string | null;
 }
 
-export type WizardStep = "topic" | "style" | "confirm" | "progress" | "result";
+export type WizardStep = "topic" | "layout" | "style" | "confirm" | "progress" | "result";

@@ -15,18 +15,20 @@ class JobManager:
         self,
         topic: str,
         style_id: str | None = None,
+        layout_id: str | None = None,
         text_labels: list[str] | None = None,
         aspect_ratio: str = "9:16",
-        output_mode: str = "visual",
+        language: str = "English",
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]
         job = Job(
             id=job_id,
             topic=topic,
             style_id=style_id,
+            layout_id=layout_id,
             text_labels=text_labels,
             aspect_ratio=aspect_ratio,
-            output_mode=output_mode,
+            language=language,
         )
         self._jobs[job_id] = job
         return job
@@ -91,8 +93,9 @@ class JobManager:
                         yield {
                             "event": "result",
                             "data": json.dumps({
-                                "base_image_url": job.base_image_url,
-                                "final_image_url": job.final_image_url,
+                                "image_url": job.image_url,
+                                "layout_id": job.layout_id,
+                                "layout_name": job.layout_name,
                                 "style_id": job.style_id,
                                 "style_name": job.style_name,
                             }),

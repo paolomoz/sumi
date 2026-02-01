@@ -1,25 +1,36 @@
 from pydantic import BaseModel, Field
 
 
+# --- Layouts ---
+
+class LayoutResponse(BaseModel):
+    id: str
+    name: str
+    best_for: list[str]
+    recommended_pairings: list[str]
+
+
+class LayoutDetailResponse(LayoutResponse):
+    content: str
+
+
 # --- Styles ---
 
 class StyleResponse(BaseModel):
     id: str
     name: str
-    category: str
-    rating: int
-    mood: list[str]
-    color_palette: list[str]
-    best_for: list[str]
-    has_guide: bool
-    description: str
+    best_for: str
 
 
 class StyleDetailResponse(StyleResponse):
-    guide: str | None = None
+    content: str
 
 
-class StyleRecommendation(BaseModel):
+# --- Combinations ---
+
+class CombinationRecommendation(BaseModel):
+    layout_id: str
+    layout_name: str
     style_id: str
     style_name: str
     rationale: str
@@ -31,7 +42,7 @@ class RecommendRequest(BaseModel):
 
 
 class RecommendResponse(BaseModel):
-    recommendations: list[StyleRecommendation]
+    recommendations: list[CombinationRecommendation]
 
 
 # --- Generation ---
@@ -39,9 +50,10 @@ class RecommendResponse(BaseModel):
 class GenerateRequest(BaseModel):
     topic: str = Field(..., min_length=3, max_length=2000)
     style_id: str | None = None
+    layout_id: str | None = None
     text_labels: list[str] | None = None
     aspect_ratio: str = "9:16"
-    output_mode: str = "visual"  # "visual" or "textual"
+    language: str = "English"
 
 
 class GenerateResponse(BaseModel):
@@ -63,12 +75,13 @@ class JobStatusResponse(BaseModel):
 
 
 class JobResult(BaseModel):
-    base_image_url: str | None = None
-    final_image_url: str | None = None
+    image_url: str | None = None
+    layout_id: str | None = None
+    layout_name: str | None = None
     style_id: str | None = None
     style_name: str | None = None
     analysis: dict | None = None
-    recommendations: list[StyleRecommendation] | None = None
+    recommendations: list[CombinationRecommendation] | None = None
 
 
 # --- Health ---

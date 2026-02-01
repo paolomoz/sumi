@@ -1,37 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useGenerationStore } from "@/lib/stores/generation-store";
-import { useRecommendations } from "@/lib/hooks/use-styles";
-import { StyleRecommendationPanel } from "@/components/styles/style-recommendation";
-import { StyleCatalog } from "@/components/styles/style-catalog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { stylesCatalog } from "@/data/styles-catalog";
+import { useGenerationStore } from "@/lib/stores/generation-store";
+import { useStyles, useRecommendations } from "@/lib/hooks/use-references";
+import { StyleRecommendationPanel } from "@/components/styles/style-recommendation";
+import { cn } from "@/lib/utils";
 
 export function StepStyle() {
-  const { topic, selectedStyleId, selectStyle, setStep, setRecommendations } =
-    useGenerationStore();
-  const [showFullCatalog, setShowFullCatalog] = useState(false);
-  const { data, isLoading } = useRecommendations(topic, true);
+  const {
+    topic,
+    selectedStyleId,
+    selectStyle,
+    selectCombination,
+    setStep,
+    setRecommendations,
+  } = useGenerationStore();
+  const { data: styles, isLoading: stylesLoading } = useStyles();
+  const { data: recData, isLoading: recsLoading } = useRecommendations(topic, true);
 
   useEffect(() => {
-    if (data?.recommendations) {
-      setRecommendations(data.recommendations);
+    if (recData?.recommendations) {
+      setRecommendations(recData.recommendations);
     }
-  }, [data, setRecommendations]);
+  }, [recData, setRecommendations]);
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-1">Choose an artistic style</h2>
         <p className="text-sm text-muted">
-          We recommend styles based on your topic, or browse all 126 styles.
+          We recommend styles based on your topic, or browse all 19 styles.
         </p>
       </div>
 
       {/* Recommendations */}
-      {isLoading ? (
+      {recsLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-4 w-48" />
           <div className="grid grid-cols-3 gap-3">
@@ -40,38 +45,55 @@ export function StepStyle() {
             <Skeleton className="h-32" />
           </div>
         </div>
-      ) : data?.recommendations ? (
+      ) : recData?.recommendations ? (
         <StyleRecommendationPanel
-          recommendations={data.recommendations}
+          recommendations={recData.recommendations}
           selectedId={selectedStyleId}
-          onSelect={selectStyle}
+          onSelect={(styleId, layoutId) => {
+            if (layoutId) {
+              selectCombination(layoutId, styleId);
+            } else {
+              selectStyle(styleId);
+            }
+          }}
         />
       ) : null}
 
-      {/* Browse all */}
+      {/* Browse all styles */}
       <div>
-        <button
-          type="button"
-          onClick={() => setShowFullCatalog(!showFullCatalog)}
-          className="text-sm text-primary hover:underline cursor-pointer"
-        >
-          {showFullCatalog ? "Hide full catalog" : "Browse all 126 styles"}
-        </button>
-
-        {showFullCatalog && (
-          <div className="mt-4">
-            <StyleCatalog
-              styles={stylesCatalog}
-              selectedId={selectedStyleId}
-              onSelect={selectStyle}
-            />
+        <h3 className="text-sm font-medium mb-3">All styles</h3>
+        {stylesLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-20" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
+            {styles?.map((style) => (
+              <button
+                key={style.id}
+                type="button"
+                onClick={() => selectStyle(style.id)}
+                className={cn(
+                  "text-left rounded-[var(--radius-lg)] border p-3 transition-all cursor-pointer",
+                  "hover:shadow-md",
+                  selectedStyleId === style.id
+                    ? "border-primary ring-2 ring-primary/20"
+                    : "border-border hover:border-primary/30"
+                )}
+              >
+                <h4 className="font-medium text-sm mb-1">{style.name}</h4>
+                <p className="text-xs text-muted line-clamp-2">{style.best_for}</p>
+              </button>
+            ))}
           </div>
         )}
       </div>
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="ghost" onClick={() => setStep("topic")}>
+        <Button variant="ghost" onClick={() => setStep("layout")}>
           Back
         </Button>
         <Button onClick={() => setStep("confirm")} disabled={!selectedStyleId}>

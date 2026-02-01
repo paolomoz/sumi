@@ -11,7 +11,7 @@ export function StepTopic() {
   const handleNext = () => {
     if (!localTopic.trim()) return;
     setTopic(localTopic.trim());
-    setStep("style");
+    setStep("layout");
   };
 
   return (
@@ -33,7 +33,7 @@ export function StepTopic() {
 
       <div className="flex justify-end">
         <Button onClick={handleNext} disabled={!localTopic.trim()}>
-          Choose Style
+          Choose Layout
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

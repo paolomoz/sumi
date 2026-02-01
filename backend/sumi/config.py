@@ -11,7 +11,6 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     google_api_key: str = ""
-    fal_api_key: str = ""
 
     # Model settings
     claude_model: str = "claude-sonnet-4-20250514"

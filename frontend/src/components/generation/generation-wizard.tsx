@@ -4,6 +4,7 @@ import { useGenerationStore } from "@/lib/stores/generation-store";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { StepTopic } from "./step-topic";
+import { StepLayout } from "./step-layout";
 import { StepStyle } from "./step-style";
 import { StepConfirm } from "./step-confirm";
 import { StepProgress } from "./step-progress";
@@ -11,6 +12,7 @@ import { StepResult } from "./step-result";
 
 const stepComponents = {
   topic: StepTopic,
+  layout: StepLayout,
   style: StepStyle,
   confirm: StepConfirm,
   progress: StepProgress,
@@ -19,6 +21,7 @@ const stepComponents = {
 
 const stepTitles: Record<string, string> = {
   topic: "Describe your infographic",
+  layout: "Choose a layout",
   style: "Choose an artistic style",
   confirm: "Review & generate",
   progress: "Creating your infographic",

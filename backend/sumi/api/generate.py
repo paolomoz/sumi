@@ -9,7 +9,7 @@ from sumi.api.schemas import (
     JobStatusResponse,
     JobProgress,
     JobResult,
-    StyleRecommendation,
+    CombinationRecommendation,
 )
 from sumi.jobs.manager import job_manager
 from sumi.jobs.models import STEP_PROGRESS, STEP_MESSAGES, JobStatus
@@ -23,9 +23,10 @@ async def create_generation(request: GenerateRequest):
     job = job_manager.create_job(
         topic=request.topic,
         style_id=request.style_id,
+        layout_id=request.layout_id,
         text_labels=request.text_labels,
         aspect_ratio=request.aspect_ratio,
-        output_mode=request.output_mode,
+        language=request.language,
     )
     # Launch pipeline as background task
     asyncio.create_task(run_pipeline(job))
@@ -49,11 +50,12 @@ async def get_job_status(job_id: str):
         recommendations = None
         if job.recommendations:
             recommendations = [
-                StyleRecommendation(**r) for r in job.recommendations
+                CombinationRecommendation(**r) for r in job.recommendations
             ]
         result = JobResult(
-            base_image_url=job.base_image_url,
-            final_image_url=job.final_image_url,
+            image_url=job.image_url,
+            layout_id=job.layout_id,
+            layout_name=job.layout_name,
             style_id=job.style_id,
             style_name=job.style_name,
             analysis=job.analysis,
