@@ -81,7 +81,7 @@ class JobManager:
                 }
 
             while True:
-                event = await asyncio.wait_for(queue.get(), timeout=60)
+                event = await asyncio.wait_for(queue.get(), timeout=600)
                 data = {
                     "event": "status",
                     "data": json.dumps(event),

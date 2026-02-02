@@ -93,7 +93,7 @@ export function StepStyle() {
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="ghost" onClick={() => setStep("layout")}>
+        <Button variant="ghost" onClick={() => setStep("topic")}>
           Back
         </Button>
         <Button onClick={() => setStep("confirm")} disabled={!selectedStyleId}>

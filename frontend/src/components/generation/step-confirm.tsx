@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGenerationStore } from "@/lib/stores/generation-store";
 import { useStartGeneration } from "@/lib/hooks/use-generation";
-import { useLayouts, useStyles } from "@/lib/hooks/use-references";
+import { useStyles } from "@/lib/hooks/use-references";
 
 const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese", "Chinese", "Korean"];
 
@@ -20,9 +20,7 @@ export function StepConfirm() {
     setJobId,
   } = useGenerationStore();
   const mutation = useStartGeneration();
-  const { data: layouts } = useLayouts();
   const { data: styles } = useStyles();
-  const layoutName = layouts?.find((l) => l.id === selectedLayoutId)?.name || selectedLayoutId;
   const styleName = styles?.find((s) => s.id === selectedStyleId)?.name || selectedStyleId;
 
   const handleGenerate = async () => {
@@ -54,11 +52,6 @@ export function StepConfirm() {
         <Card>
           <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Topic</div>
           <p className="text-sm">{topic}</p>
-        </Card>
-
-        <Card>
-          <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Layout</div>
-          <p className="text-sm">{layoutName || "Auto-selected"}</p>
         </Card>
 
         <Card>

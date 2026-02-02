@@ -33,4 +33,4 @@ export interface JobStatus {
   error: string | null;
 }
 
-export type WizardStep = "topic" | "layout" | "style" | "confirm" | "progress" | "result";
+export type WizardStep = "topic" | "style" | "confirm" | "progress" | "result";

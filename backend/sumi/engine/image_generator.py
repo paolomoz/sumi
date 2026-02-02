@@ -45,7 +45,16 @@ async def generate_image(
                 if isinstance(image_bytes, str):
                     image_bytes = base64.b64decode(image_bytes)
 
-                output = Path(output_path)
+                # Use correct extension based on mime type
+                mime = getattr(part.inline_data, "mime_type", "") or ""
+                if "jpeg" in mime or "jpg" in mime:
+                    ext = ".jpg"
+                elif "webp" in mime:
+                    ext = ".webp"
+                else:
+                    ext = ".png"
+
+                output = Path(output_path).with_suffix(ext)
                 output.parent.mkdir(parents=True, exist_ok=True)
                 output.write_bytes(image_bytes)
                 return str(output)

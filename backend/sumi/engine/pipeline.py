@@ -85,12 +85,14 @@ async def run_pipeline(job: Job):
         (output_dir / "prompt.md").write_text(prompt, encoding="utf-8")
 
         image_path = str(output_dir / "infographic.png")
-        await generate_image(
+        actual_path = await generate_image(
             prompt=prompt,
             output_path=image_path,
             aspect_ratio=job.aspect_ratio,
         )
-        job.image_url = f"/output/{job.id}/infographic.png"
+        # Use the actual filename (extension may differ from .png)
+        actual_name = Path(actual_path).name
+        job.image_url = f"/output/{job.id}/{actual_name}"
 
         # Done
         await job_manager.update_status(job.id, JobStatus.COMPLETED)
