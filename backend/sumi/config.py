@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     google_api_key: str = ""
 
     # Model settings
-    claude_model: str = "claude-opus-4-20250514"
+    claude_model: str = "claude-opus-4-5-20250514"
     image_model: str = "gemini-3-pro-image-preview"
 
     # Server
