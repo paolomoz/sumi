@@ -33,9 +33,7 @@ export function Sidebar() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex items-center gap-2 border-b border-border px-4 py-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-foreground">
-              <span className="text-sm font-bold text-background">S</span>
-            </div>
+            <img src="/icon-circle-dark.svg" alt="" width={32} height={32} className="h-8 w-8" />
             <span className="text-lg font-semibold">Sumi</span>
           </div>
 

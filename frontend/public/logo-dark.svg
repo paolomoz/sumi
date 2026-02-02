@@ -1,0 +1,25 @@
+<svg width="120" height="200" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sumi Logo - Dark version (for light backgrounds) -->
+  <defs>
+    <linearGradient id="inkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1a" />
+      <stop offset="100%" stop-color="#2a2a2a" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Ink drop -->
+  <path 
+    d="M60 10 C60 10, 72 26, 72 38 C72 46, 67 50, 60 50 C53 50, 48 46, 48 38 C48 26, 60 10, 60 10Z" 
+    fill="url(#inkGrad)"
+  />
+  
+  <!-- Wave dispersion -->
+  <path d="M30 70 Q45 62, 60 70 Q75 78, 90 70" stroke="#1a1a1a" stroke-width="3" fill="none" opacity="0.9" stroke-linecap="round"/>
+  <path d="M25 88 Q42 78, 60 88 Q78 98, 95 88" stroke="#1a1a1a" stroke-width="2.5" fill="none" opacity="0.75" stroke-linecap="round"/>
+  <path d="M20 106 Q40 94, 60 106 Q80 118, 100 106" stroke="#1a1a1a" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+  <path d="M18 122 Q38 112, 60 122 Q82 132, 102 122" stroke="#1a1a1a" stroke-width="1.5" fill="none" opacity="0.45" stroke-linecap="round"/>
+  <path d="M16 136 Q36 128, 60 136 Q84 144, 104 136" stroke="#1a1a1a" stroke-width="1" fill="none" opacity="0.3" stroke-linecap="round"/>
+  
+  <!-- Wordmark -->
+  <text x="60" y="175" text-anchor="middle" font-family="'Noto Serif JP', Georgia, serif" font-weight="300" font-size="28" letter-spacing="6" fill="#1a1a1a">SUMI</text>
+</svg>

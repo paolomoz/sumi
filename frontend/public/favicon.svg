@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sumi Favicon -->
+  <circle cx="16" cy="16" r="15" fill="#1a1a1a"/>
+  
+  <!-- Ink drop (simplified for small size) -->
+  <path 
+    d="M16 4 C16 4, 21 10, 21 14 C21 17, 19 19, 16 19 C13 19, 11 17, 11 14 C11 10, 16 4, 16 4Z" 
+    fill="#f7f5f0"
+  />
+  
+  <!-- Wave (simplified) -->
+  <path d="M8 23 Q12 20, 16 23 Q20 26, 24 23" stroke="#f7f5f0" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round"/>
+</svg>

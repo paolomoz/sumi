@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sumi Icon - Circular - Light version -->
+  <circle cx="256" cy="256" r="244" fill="#f7f5f0"/>
+  
+  <!-- Ink drop -->
+  <path 
+    d="M256 64 C256 64, 332 166, 332 230 C332 281, 299 307, 256 307 C213 307, 180 281, 180 230 C180 166, 256 64, 256 64Z" 
+    fill="#1a1a1a"
+  />
+  
+  <!-- Wave dispersion -->
+  <path d="M140 358 Q198 320, 256 358 Q314 396, 372 358" stroke="#1a1a1a" stroke-width="16" fill="none" opacity="0.85" stroke-linecap="round"/>
+  <path d="M115 422 Q185 370, 256 422 Q327 474, 397 422" stroke="#1a1a1a" stroke-width="12" fill="none" opacity="0.55" stroke-linecap="round"/>
+</svg>
