@@ -10,7 +10,7 @@ export default function Home() {
   const handleSubmit = (text: string) => {
     openWizard();
     setTopic(text);
-    setStep("layout");
+    setStep("style");
   };
 
   return (
