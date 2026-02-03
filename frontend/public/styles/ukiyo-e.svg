@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+  <rect width="160" height="120" fill="#F5ECD7"/>
+  <!-- bokashi sky gradient -->
+  <rect x="0" y="0" width="160" height="50" fill="#3A5F8A" opacity="0.15"/>
+  <rect x="0" y="0" width="160" height="30" fill="#3A5F8A" opacity="0.1"/>
+  <!-- mountain silhouette -->
+  <polygon points="0,55 30,25 55,45 80,20 110,40 140,28 160,45 160,55" fill="#2B4570" opacity="0.3"/>
+  <polygon points="0,55 30,25 55,45 80,20 110,40 140,28 160,45 160,55" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
+  <!-- stylized wave pattern -->
+  <path d="M0,80 Q20,70 40,80 Q60,90 80,80 Q100,70 120,80 Q140,90 160,80" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+  <path d="M0,88 Q20,78 40,88 Q60,98 80,88 Q100,78 120,88 Q140,98 160,88" fill="none" stroke="#1A1A1A" stroke-width="1.5"/>
+  <path d="M0,80 Q20,70 40,80 Q60,90 80,80 Q100,70 120,80 Q140,90 160,80 L160,88 Q140,98 120,88 Q100,78 80,88 Q60,98 40,88 Q20,78 0,88Z" fill="#3A5F8A" opacity="0.15"/>
+  <!-- wave spray details -->
+  <path d="M38,76 Q40,72 42,76" fill="none" stroke="#1A1A1A" stroke-width="0.8"/>
+  <path d="M78,76 Q80,72 82,76" fill="none" stroke="#1A1A1A" stroke-width="0.8"/>
+  <path d="M118,76 Q120,72 122,76" fill="none" stroke="#1A1A1A" stroke-width="0.8"/>
+  <!-- flat color areas -->
+  <rect x="10" y="58" width="35" height="15" rx="1" fill="#C84B31" opacity="0.3"/>
+  <rect x="10" y="58" width="35" height="15" rx="1" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+  <rect x="14" y="61" width="22" height="3" rx="1" fill="#1A1A1A" opacity="0.4"/>
+  <rect x="14" y="67" width="18" height="3" rx="1" fill="#1A1A1A" opacity="0.3"/>
+  <!-- text cartouche -->
+  <rect x="100" y="8" width="50" height="45" rx="2" fill="#F5ECD7" stroke="#1A1A1A" stroke-width="1.5"/>
+  <rect x="108" y="15" width="35" height="4" rx="1" fill="#1A1A1A" opacity="0.5"/>
+  <rect x="108" y="23" width="30" height="3" rx="1" fill="#1A1A1A" opacity="0.3"/>
+  <rect x="108" y="30" width="32" height="3" rx="1" fill="#1A1A1A" opacity="0.3"/>
+  <rect x="108" y="37" width="25" height="3" rx="1" fill="#1A1A1A" opacity="0.25"/>
+  <rect x="108" y="44" width="28" height="3" rx="1" fill="#1A1A1A" opacity="0.25"/>
+  <!-- cherry blossom accent -->
+  <circle cx="70" cy="38" r="3" fill="#E8A0BF" opacity="0.5"/>
+  <circle cx="76" cy="35" r="2.5" fill="#E8A0BF" opacity="0.4"/>
+  <circle cx="65" cy="34" r="2" fill="#E8A0BF" opacity="0.35"/>
+  <circle cx="72" cy="42" r="2" fill="#E8A0BF" opacity="0.3"/>
+  <!-- branch -->
+  <path d="M60,45 Q68,38 78,32" fill="none" stroke="#5A3825" stroke-width="0.8"/>
+  <!-- seal stamp -->
+  <rect x="55" y="95" width="14" height="18" rx="1" fill="#C84B31" opacity="0.6"/>
+  <rect x="57" y="97" width="10" height="14" rx="0.5" fill="none" stroke="#F5ECD7" stroke-width="0.5"/>
+  <!-- bottom area -->
+  <rect x="0" y="95" width="160" height="25" fill="#3A5F8A" opacity="0.05"/>
+</svg>

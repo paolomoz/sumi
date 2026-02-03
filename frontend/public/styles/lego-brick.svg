@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+  <rect width="160" height="120" fill="#C8C8C8"/>
+  <!-- baseplate grid -->
+  <pattern id="studs-bg" width="10" height="10" patternUnits="userSpaceOnUse">
+    <circle cx="5" cy="5" r="1.5" fill="#B0B0B0"/>
+  </pattern>
+  <rect width="160" height="120" fill="url(#studs-bg)"/>
+  <!-- red title brick -->
+  <rect x="15" y="8" width="90" height="16" rx="2" fill="#D32F2F"/>
+  <circle cx="22" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="32" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="42" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="52" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="62" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="72" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="82" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <circle cx="92" cy="14" r="3" fill="#E57373" opacity="0.6"/>
+  <!-- blue brick -->
+  <rect x="15" y="28" width="50" height="16" rx="2" fill="#1565C0"/>
+  <circle cx="22" cy="34" r="3" fill="#42A5F5" opacity="0.5"/>
+  <circle cx="32" cy="34" r="3" fill="#42A5F5" opacity="0.5"/>
+  <circle cx="42" cy="34" r="3" fill="#42A5F5" opacity="0.5"/>
+  <circle cx="52" cy="34" r="3" fill="#42A5F5" opacity="0.5"/>
+  <!-- yellow brick -->
+  <rect x="70" y="28" width="70" height="16" rx="2" fill="#FDD835"/>
+  <circle cx="77" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <circle cx="87" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <circle cx="97" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <circle cx="107" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <circle cx="117" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <circle cx="127" cy="34" r="3" fill="#FFF176" opacity="0.6"/>
+  <!-- green bricks -->
+  <rect x="15" y="48" width="30" height="16" rx="2" fill="#2E7D32"/>
+  <circle cx="22" cy="54" r="3" fill="#66BB6A" opacity="0.5"/>
+  <circle cx="32" cy="54" r="3" fill="#66BB6A" opacity="0.5"/>
+  <rect x="50" y="48" width="30" height="16" rx="2" fill="#2E7D32"/>
+  <circle cx="57" cy="54" r="3" fill="#66BB6A" opacity="0.5"/>
+  <circle cx="67" cy="54" r="3" fill="#66BB6A" opacity="0.5"/>
+  <!-- white brick -->
+  <rect x="85" y="48" width="55" height="16" rx="2" fill="#F5F5F5"/>
+  <circle cx="92" cy="54" r="3" fill="#E0E0E0"/>
+  <circle cx="102" cy="54" r="3" fill="#E0E0E0"/>
+  <circle cx="112" cy="54" r="3" fill="#E0E0E0"/>
+  <circle cx="122" cy="54" r="3" fill="#E0E0E0"/>
+  <circle cx="132" cy="54" r="3" fill="#E0E0E0"/>
+  <!-- minifigure -->
+  <rect x="15" y="72" width="12" height="4" rx="1" fill="#FDD835"/>
+  <circle cx="21" cy="70" r="5" fill="#FDD835"/>
+  <circle cx="19" cy="69" r="1" fill="#333"/>
+  <circle cx="23" cy="69" r="1" fill="#333"/>
+  <path d="M18 71 Q21 73 24 71" fill="none" stroke="#333" stroke-width="0.7"/>
+  <rect x="15" y="76" width="12" height="12" rx="1" fill="#D32F2F"/>
+  <rect x="15" y="88" width="5" height="8" rx="1" fill="#1565C0"/>
+  <rect x="22" y="88" width="5" height="8" rx="1" fill="#1565C0"/>
+  <!-- more bricks -->
+  <rect x="40" y="72" width="40" height="24" rx="2" fill="#D32F2F" opacity="0.3"/>
+  <rect x="85" y="72" width="55" height="24" rx="2" fill="#1565C0" opacity="0.3"/>
+  <rect x="45" y="78" width="30" height="3" rx="1" fill="#FFF" opacity="0.4"/>
+  <rect x="45" y="84" width="25" height="3" rx="1" fill="#FFF" opacity="0.3"/>
+  <rect x="90" y="78" width="40" height="3" rx="1" fill="#FFF" opacity="0.4"/>
+  <rect x="90" y="84" width="35" height="3" rx="1" fill="#FFF" opacity="0.3"/>
+</svg>

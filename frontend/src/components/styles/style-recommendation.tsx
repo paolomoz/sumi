@@ -40,24 +40,32 @@ export function StyleRecommendationPanel({
               type="button"
               onClick={() => onSelect(rec.style_id, rec.layout_id)}
               className={cn(
-                "text-left rounded-[var(--radius-lg)] border p-4 transition-all cursor-pointer",
+                "text-left rounded-[var(--radius-lg)] border overflow-hidden transition-all cursor-pointer",
                 "hover:shadow-md",
                 selectedId === rec.style_id
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-border hover:border-primary/30"
               )}
             >
-              {/* Approach badge */}
-              <div
-                className="inline-flex items-center gap-1 rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-medium mb-2"
-                style={{ backgroundColor: `${approach.color}18`, color: approach.color }}
-              >
-                {approach.label}
-              </div>
+              <img
+                src={`/styles/${rec.style_id}.svg`}
+                alt=""
+                className="w-full h-20 object-cover"
+                draggable={false}
+              />
+              <div className="p-4 pt-2">
+                {/* Approach badge */}
+                <div
+                  className="inline-flex items-center gap-1 rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-medium mb-2"
+                  style={{ backgroundColor: `${approach.color}18`, color: approach.color }}
+                >
+                  {approach.label}
+                </div>
 
-              <h4 className="font-medium text-sm mb-0.5">{rec.style_name}</h4>
-              <p className="text-xs text-muted mb-1">{rec.layout_name} layout</p>
-              <p className="text-xs text-muted line-clamp-2">{rec.rationale}</p>
+                <h4 className="font-medium text-sm mb-0.5">{rec.style_name}</h4>
+                <p className="text-xs text-muted mb-1">{rec.layout_name} layout</p>
+                <p className="text-xs text-muted line-clamp-2">{rec.rationale}</p>
+              </div>
             </button>
           );
         })}

@@ -56,7 +56,17 @@ export function StepConfirm() {
 
         <Card>
           <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Style</div>
-          <p className="text-sm">{styleName || "Auto-selected"}</p>
+          <div className="flex items-center gap-3">
+            {selectedStyleId && (
+              <img
+                src={`/styles/${selectedStyleId}.svg`}
+                alt=""
+                className="w-16 h-12 rounded-[var(--radius-sm)] object-cover border border-border"
+                draggable={false}
+              />
+            )}
+            <p className="text-sm">{styleName || "Auto-selected"}</p>
+          </div>
         </Card>
 
         <Card>

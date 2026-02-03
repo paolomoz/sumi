@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+  <defs>
+    <filter id="neon-glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neon-glow-sm">
+      <feGaussianBlur stdDeviation="1" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="160" height="120" fill="#0A0A0A"/>
+  <!-- grid lines -->
+  <line x1="0" y1="30" x2="160" y2="30" stroke="#1A0030" stroke-width="0.5"/>
+  <line x1="0" y1="60" x2="160" y2="60" stroke="#1A0030" stroke-width="0.5"/>
+  <line x1="0" y1="90" x2="160" y2="90" stroke="#1A0030" stroke-width="0.5"/>
+  <line x1="40" y1="0" x2="40" y2="120" stroke="#1A0030" stroke-width="0.5"/>
+  <line x1="80" y1="0" x2="80" y2="120" stroke="#1A0030" stroke-width="0.5"/>
+  <line x1="120" y1="0" x2="120" y2="120" stroke="#1A0030" stroke-width="0.5"/>
+  <!-- neon title -->
+  <rect x="15" y="10" width="90" height="8" rx="1" fill="#FF00FF" opacity="0.8" filter="url(#neon-glow)"/>
+  <rect x="15" y="22" width="55" height="4" rx="1" fill="#00FFFF" opacity="0.5" filter="url(#neon-glow-sm)"/>
+  <!-- circuit pattern -->
+  <path d="M10 45 L30 45 L30 55 L50 55 L50 45 L65 45" fill="none" stroke="#00FFFF" stroke-width="1" opacity="0.6" filter="url(#neon-glow-sm)"/>
+  <circle cx="30" cy="45" r="2" fill="#00FFFF" opacity="0.8"/>
+  <circle cx="50" cy="55" r="2" fill="#00FFFF" opacity="0.8"/>
+  <!-- neon box -->
+  <rect x="75" y="35" width="70" height="35" rx="2" fill="none" stroke="#FF00FF" stroke-width="1.5" opacity="0.7" filter="url(#neon-glow-sm)"/>
+  <rect x="82" y="42" width="50" height="3" rx="1" fill="#FF00FF" opacity="0.4"/>
+  <rect x="82" y="49" width="40" height="3" rx="1" fill="#FF00FF" opacity="0.3"/>
+  <rect x="82" y="56" width="45" height="3" rx="1" fill="#FF00FF" opacity="0.25"/>
+  <!-- HUD element -->
+  <polygon points="15,75 55,75 50,85 10,85" fill="none" stroke="#00FFFF" stroke-width="1" opacity="0.5"/>
+  <rect x="18" y="78" width="25" height="3" rx="1" fill="#00FFFF" opacity="0.4"/>
+  <!-- neon bars -->
+  <rect x="75" y="80" width="15" height="25" rx="1" fill="#FF00FF" opacity="0.4" filter="url(#neon-glow-sm)"/>
+  <rect x="95" y="88" width="15" height="17" rx="1" fill="#00FFFF" opacity="0.4" filter="url(#neon-glow-sm)"/>
+  <rect x="115" y="75" width="15" height="30" rx="1" fill="#FF00FF" opacity="0.5" filter="url(#neon-glow-sm)"/>
+  <rect x="135" y="83" width="15" height="22" rx="1" fill="#00FFFF" opacity="0.35" filter="url(#neon-glow-sm)"/>
+  <!-- glitch line -->
+  <rect x="0" y="68" width="160" height="1" fill="#FF00FF" opacity="0.15"/>
+  <rect x="40" y="69" width="30" height="1" fill="#00FFFF" opacity="0.2"/>
+</svg>

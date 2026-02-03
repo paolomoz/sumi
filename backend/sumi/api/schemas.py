@@ -38,7 +38,7 @@ class CombinationRecommendation(BaseModel):
 
 
 class RecommendRequest(BaseModel):
-    topic: str = Field(..., min_length=3, max_length=2000)
+    topic: str = Field(..., min_length=3, max_length=5000)
 
 
 class RecommendResponse(BaseModel):
@@ -48,7 +48,7 @@ class RecommendResponse(BaseModel):
 # --- Generation ---
 
 class GenerateRequest(BaseModel):
-    topic: str = Field(..., min_length=3, max_length=2000)
+    topic: str = Field(..., min_length=3, max_length=5000)
     style_id: str | None = None
     layout_id: str | None = None
     text_labels: list[str] | None = None

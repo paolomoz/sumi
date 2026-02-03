@@ -69,22 +69,30 @@ export function StepStyle() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto pr-1">
             {styles?.map((style) => (
               <button
                 key={style.id}
                 type="button"
                 onClick={() => selectStyle(style.id)}
                 className={cn(
-                  "text-left rounded-[var(--radius-lg)] border p-3 transition-all cursor-pointer",
+                  "text-left rounded-[var(--radius-lg)] border overflow-hidden transition-all cursor-pointer",
                   "hover:shadow-md",
                   selectedStyleId === style.id
                     ? "border-primary ring-2 ring-primary/20"
                     : "border-border hover:border-primary/30"
                 )}
               >
-                <h4 className="font-medium text-sm mb-1">{style.name}</h4>
-                <p className="text-xs text-muted line-clamp-2">{style.best_for}</p>
+                <img
+                  src={`/styles/${style.id}.svg`}
+                  alt=""
+                  className="w-full h-24 object-cover"
+                  draggable={false}
+                />
+                <div className="p-3 pt-2">
+                  <h4 className="font-medium text-sm mb-1">{style.name}</h4>
+                  <p className="text-xs text-muted line-clamp-2">{style.best_for}</p>
+                </div>
               </button>
             ))}
           </div>

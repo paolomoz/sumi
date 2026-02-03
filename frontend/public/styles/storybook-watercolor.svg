@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+  <defs>
+    <filter id="watercolor">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="wc-blur">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+  </defs>
+  <rect width="160" height="120" fill="#FDF8F0"/>
+  <!-- paper texture suggestion -->
+  <rect width="160" height="120" fill="#F8F0E3" opacity="0.3"/>
+  <!-- watercolor washes -->
+  <ellipse cx="45" cy="35" rx="40" ry="25" fill="#A8D5E2" opacity="0.25" filter="url(#wc-blur)"/>
+  <ellipse cx="120" cy="30" rx="35" ry="20" fill="#F4A9A8" opacity="0.2" filter="url(#wc-blur)"/>
+  <ellipse cx="80" cy="80" rx="50" ry="25" fill="#B5D8A8" opacity="0.2" filter="url(#wc-blur)"/>
+  <ellipse cx="30" cy="95" rx="25" ry="18" fill="#E8C8A0" opacity="0.25" filter="url(#wc-blur)"/>
+  <!-- delicate line drawings -->
+  <!-- small tree -->
+  <line x1="35" y1="65" x2="35" y2="45" stroke="#6B8E6B" stroke-width="1" opacity="0.5"/>
+  <circle cx="35" cy="40" r="10" fill="none" stroke="#6B8E6B" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="30" cy="38" r="7" fill="none" stroke="#6B8E6B" stroke-width="0.6" opacity="0.3"/>
+  <circle cx="40" cy="36" r="8" fill="none" stroke="#6B8E6B" stroke-width="0.6" opacity="0.3"/>
+  <!-- title text area -->
+  <rect x="60" y="12" width="80" height="6" rx="2" fill="#5B7B8A" opacity="0.4"/>
+  <rect x="70" y="22" width="55" height="4" rx="1" fill="#5B7B8A" opacity="0.25"/>
+  <!-- content areas with soft borders -->
+  <rect x="60" y="38" width="80" height="25" rx="6" fill="#FFF" opacity="0.35" stroke="#C4A882" stroke-width="0.5"/>
+  <rect x="68" y="44" width="55" height="3" rx="1" fill="#5B7B8A" opacity="0.3"/>
+  <rect x="68" y="50" width="45" height="3" rx="1" fill="#5B7B8A" opacity="0.25"/>
+  <!-- small flower -->
+  <circle cx="125" cy="80" r="4" fill="#F4A9A8" opacity="0.4"/>
+  <circle cx="121" cy="76" r="3" fill="#F4A9A8" opacity="0.3"/>
+  <circle cx="129" cy="76" r="3" fill="#F4A9A8" opacity="0.3"/>
+  <circle cx="125" cy="80" r="2" fill="#E8C8A0" opacity="0.5"/>
+  <!-- bottom text lines -->
+  <rect x="20" y="85" width="70" height="3" rx="1" fill="#5B7B8A" opacity="0.25"/>
+  <rect x="20" y="92" width="55" height="3" rx="1" fill="#5B7B8A" opacity="0.2"/>
+  <rect x="20" y="99" width="40" height="3" rx="1" fill="#5B7B8A" opacity="0.15"/>
+  <!-- paint splotch -->
+  <circle cx="145" cy="105" r="8" fill="#A8D5E2" opacity="0.15" filter="url(#wc-blur)"/>
+</svg>
