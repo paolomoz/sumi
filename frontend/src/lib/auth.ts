@@ -3,7 +3,10 @@ import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google, GitHub],
+  providers: [
+    Google,
+    GitHub({ checks: ["state"] }),
+  ],
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, account, user }) {
