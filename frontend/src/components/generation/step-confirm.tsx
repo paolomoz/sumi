@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGenerationStore } from "@/lib/stores/generation-store";
-import { useStartGeneration } from "@/lib/hooks/use-generation";
+import { useStartGeneration, useStartRestyle } from "@/lib/hooks/use-generation";
 import { useStyles } from "@/lib/hooks/use-references";
 
 const LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Portuguese", "Japanese", "Chinese", "Korean"];
@@ -15,23 +15,39 @@ export function StepConfirm() {
     selectedLayoutId,
     aspectRatio,
     language,
+    sourceJobId,
     setLanguage,
     setStep,
     setJobId,
   } = useGenerationStore();
-  const mutation = useStartGeneration();
+  const generateMutation = useStartGeneration();
+  const restyleMutation = useStartRestyle();
   const { data: styles } = useStyles();
   const styleName = styles?.find((s) => s.id === selectedStyleId)?.name || selectedStyleId;
 
+  const isRestyle = !!sourceJobId;
+  const mutation = isRestyle ? restyleMutation : generateMutation;
+
   const handleGenerate = async () => {
     try {
-      const result = await mutation.mutateAsync({
-        topic,
-        style_id: selectedStyleId || undefined,
-        layout_id: selectedLayoutId || undefined,
-        aspect_ratio: aspectRatio,
-        language,
-      });
+      let result: { job_id: string };
+      if (isRestyle && selectedStyleId) {
+        result = await restyleMutation.mutateAsync({
+          jobId: sourceJobId,
+          style_id: selectedStyleId,
+          layout_id: selectedLayoutId || undefined,
+          aspect_ratio: aspectRatio,
+          language,
+        });
+      } else {
+        result = await generateMutation.mutateAsync({
+          topic,
+          style_id: selectedStyleId || undefined,
+          layout_id: selectedLayoutId || undefined,
+          aspect_ratio: aspectRatio,
+          language,
+        });
+      }
       setJobId(result.job_id);
       setStep("progress");
     } catch {
@@ -59,7 +75,7 @@ export function StepConfirm() {
           <div className="flex items-center gap-3">
             {selectedStyleId && (
               <img
-                src={`/styles/${selectedStyleId}.svg`}
+                src={`/styles/${selectedStyleId}.jpg`}
                 alt=""
                 className="w-16 h-12 rounded-[var(--radius-sm)] object-cover border border-border"
                 draggable={false}
@@ -108,7 +124,7 @@ export function StepConfirm() {
           Back
         </Button>
         <Button onClick={handleGenerate} disabled={mutation.isPending}>
-          {mutation.isPending ? "Starting..." : "Generate Infographic"}
+          {mutation.isPending ? "Starting..." : isRestyle ? "Restyle Infographic" : "Generate Infographic"}
         </Button>
       </div>
     </div>

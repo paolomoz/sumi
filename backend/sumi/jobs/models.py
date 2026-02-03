@@ -36,6 +36,23 @@ STEP_MESSAGES = {
     JobStatus.FAILED: "Generation failed",
 }
 
+# Restyle pipeline: shorter progress (skips analysis/structuring/recommending)
+RESTYLE_STEP_PROGRESS = {
+    JobStatus.QUEUED: 0.0,
+    JobStatus.CRAFTING: 0.2,
+    JobStatus.GENERATING: 0.5,
+    JobStatus.COMPLETED: 1.0,
+    JobStatus.FAILED: 0.0,
+}
+
+RESTYLE_STEP_MESSAGES = {
+    JobStatus.QUEUED: "Waiting in queue...",
+    JobStatus.CRAFTING: "Crafting image generation prompt...",
+    JobStatus.GENERATING: "Generating infographic with Imagen 4...",
+    JobStatus.COMPLETED: "Your infographic is ready!",
+    JobStatus.FAILED: "Generation failed",
+}
+
 
 @dataclass
 class Job:
@@ -49,6 +66,7 @@ class Job:
     status: JobStatus = JobStatus.QUEUED
     error: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
+    source_job_id: str | None = None
 
     # Results populated during pipeline
     analysis: dict | None = None

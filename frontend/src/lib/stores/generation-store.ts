@@ -18,6 +18,7 @@ interface GenerationState {
   // Results
   jobId: string | null;
   recommendations: CombinationRecommendation[];
+  sourceJobId: string | null;
 
   // Actions
   openWizard: () => void;
@@ -32,6 +33,7 @@ interface GenerationState {
   setLanguage: (language: string) => void;
   setJobId: (id: string) => void;
   setRecommendations: (recs: CombinationRecommendation[]) => void;
+  setSourceJobId: (id: string | null) => void;
   reset: () => void;
 }
 
@@ -46,6 +48,7 @@ const initialState = {
   language: "English",
   jobId: null as string | null,
   recommendations: [] as CombinationRecommendation[],
+  sourceJobId: null as string | null,
 };
 
 export const useGenerationStore = create<GenerationState>((set) => ({
@@ -54,7 +57,7 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   openWizard: () => set({ wizardOpen: true, step: "topic" }),
   closeWizard: () => set({ wizardOpen: false }),
   setStep: (step) => set({ step }),
-  setTopic: (topic) => set({ topic }),
+  setTopic: (topic) => set({ topic, sourceJobId: null }),
   setTextLabels: (labels) => set({ textLabels: labels }),
   selectLayout: (id) => set({ selectedLayoutId: id }),
   selectStyle: (id) => set({ selectedStyleId: id }),
@@ -64,5 +67,6 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   setLanguage: (language) => set({ language }),
   setJobId: (id) => set({ jobId: id }),
   setRecommendations: (recs) => set({ recommendations: recs }),
+  setSourceJobId: (id) => set({ sourceJobId: id }),
   reset: () => set(initialState),
 }));

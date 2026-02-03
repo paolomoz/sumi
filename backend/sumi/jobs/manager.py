@@ -3,7 +3,11 @@ import json
 import uuid
 from collections import defaultdict
 
-from sumi.jobs.models import Job, JobStatus, STEP_PROGRESS, STEP_MESSAGES
+from sumi.jobs.models import (
+    Job, JobStatus,
+    STEP_PROGRESS, STEP_MESSAGES,
+    RESTYLE_STEP_PROGRESS, RESTYLE_STEP_MESSAGES,
+)
 
 
 class JobManager:
@@ -33,6 +37,32 @@ class JobManager:
         self._jobs[job_id] = job
         return job
 
+    def create_restyle_job(
+        self,
+        source_job: Job,
+        style_id: str,
+        layout_id: str | None = None,
+        aspect_ratio: str = "16:9",
+        language: str = "English",
+    ) -> Job:
+        job_id = uuid.uuid4().hex[:12]
+        job = Job(
+            id=job_id,
+            topic=source_job.topic,
+            style_id=style_id,
+            layout_id=layout_id or source_job.layout_id,
+            text_labels=source_job.text_labels,
+            aspect_ratio=aspect_ratio,
+            language=language,
+            source_job_id=source_job.id,
+            # Pre-populate from source job
+            analysis=source_job.analysis,
+            structured_content=source_job.structured_content,
+            recommendations=source_job.recommendations,
+        )
+        self._jobs[job_id] = job
+        return job
+
     def get_job(self, job_id: str) -> Job | None:
         return self._jobs.get(job_id)
 
@@ -46,10 +76,14 @@ class JobManager:
         await self._notify(job_id, status)
 
     async def _notify(self, job_id: str, status: JobStatus):
+        job = self._jobs.get(job_id)
+        is_restyle = job and job.source_job_id is not None
+        progress_map = RESTYLE_STEP_PROGRESS if is_restyle else STEP_PROGRESS
+        message_map = RESTYLE_STEP_MESSAGES if is_restyle else STEP_MESSAGES
         event = {
             "status": status.value,
-            "progress": STEP_PROGRESS.get(status, 0),
-            "message": STEP_MESSAGES.get(status, ""),
+            "progress": progress_map.get(status, 0),
+            "message": message_map.get(status, ""),
         }
         for queue in self._listeners.get(job_id, []):
             await queue.put(event)
@@ -71,12 +105,15 @@ class JobManager:
             # Send current status immediately
             job = self.get_job(job_id)
             if job:
+                is_restyle = job.source_job_id is not None
+                progress_map = RESTYLE_STEP_PROGRESS if is_restyle else STEP_PROGRESS
+                message_map = RESTYLE_STEP_MESSAGES if is_restyle else STEP_MESSAGES
                 yield {
                     "event": "status",
                     "data": json.dumps({
                         "status": job.status.value,
-                        "progress": STEP_PROGRESS.get(job.status, 0),
-                        "message": STEP_MESSAGES.get(job.status, ""),
+                        "progress": progress_map.get(job.status, 0),
+                        "message": message_map.get(job.status, ""),
                     }),
                 }
 

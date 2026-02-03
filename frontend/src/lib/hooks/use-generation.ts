@@ -1,12 +1,27 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { startGeneration, fetchJobStatus } from "@/lib/api/client";
+import { startGeneration, fetchJobStatus, restyleJob } from "@/lib/api/client";
 import { GenerateRequest } from "@/types/generation";
 
 export function useStartGeneration() {
   return useMutation({
     mutationFn: (request: GenerateRequest) => startGeneration(request),
+  });
+}
+
+export function useStartRestyle() {
+  return useMutation({
+    mutationFn: ({
+      jobId,
+      ...request
+    }: {
+      jobId: string;
+      style_id: string;
+      layout_id?: string;
+      aspect_ratio?: string;
+      language?: string;
+    }) => restyleJob(jobId, request),
   });
 }
 

@@ -48,7 +48,7 @@ export function StyleRecommendationPanel({
               )}
             >
               <img
-                src={`/styles/${rec.style_id}.svg`}
+                src={`/styles/${rec.style_id}.jpg`}
                 alt=""
                 className="w-full h-20 object-cover"
                 draggable={false}

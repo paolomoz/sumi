@@ -84,7 +84,7 @@ export function StepStyle() {
                 )}
               >
                 <img
-                  src={`/styles/${style.id}.svg`}
+                  src={`/styles/${style.id}.jpg`}
                   alt=""
                   className="w-full h-24 object-cover"
                   draggable={false}

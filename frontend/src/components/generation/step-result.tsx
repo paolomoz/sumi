@@ -6,7 +6,7 @@ import { useJobStatus } from "@/lib/hooks/use-generation";
 import { ResultViewer } from "@/components/result/result-viewer";
 
 export function StepResult() {
-  const { jobId, reset, setStep } = useGenerationStore();
+  const { jobId, reset, setStep, setSourceJobId } = useGenerationStore();
   const { data: job } = useJobStatus(jobId);
 
   const result = job?.result;
@@ -32,7 +32,10 @@ export function StepResult() {
       />
 
       <div className="flex justify-center gap-3">
-        <Button variant="secondary" onClick={() => setStep("style")}>
+        <Button variant="secondary" onClick={() => {
+          if (jobId) setSourceJobId(jobId);
+          setStep("style");
+        }}>
           Try Different Style
         </Button>
         <Button variant="secondary" onClick={reset}>

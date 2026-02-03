@@ -100,3 +100,65 @@ async def run_pipeline(job: Job):
     except Exception as e:
         await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))
         raise
+
+
+async def run_restyle_pipeline(job: Job):
+    """Execute a shorter pipeline for restyling: only crafting + image generation.
+
+    Assumes job already has analysis, structured_content, and recommendations
+    pre-populated from the source job.
+    """
+    try:
+        # Resolve layout and style
+        refs = get_references()
+
+        selected_layout_id = job.layout_id or "bento-grid"
+        selected_style_id = job.style_id or "craft-handmade"
+
+        job.layout_id = selected_layout_id
+        job.style_id = selected_style_id
+
+        layout = refs.get_layout(selected_layout_id)
+        style = refs.get_style(selected_style_id)
+        job.layout_name = layout.name if layout else selected_layout_id
+        job.style_name = style.name if style else selected_style_id
+
+        # Step 1: Craft prompt
+        await job_manager.update_status(job.id, JobStatus.CRAFTING)
+        analysis_md = (
+            job.analysis.get("analysis_markdown", "")
+            if isinstance(job.analysis, dict)
+            else str(job.analysis or "")
+        )
+        prompt = await craft_prompt(
+            layout_id=selected_layout_id,
+            style_id=selected_style_id,
+            structured_content=job.structured_content,
+            topic=job.topic,
+            analysis=analysis_md,
+            aspect_ratio=job.aspect_ratio,
+            language=job.language,
+        )
+        job.prompt = prompt
+
+        # Step 2: Generate image
+        await job_manager.update_status(job.id, JobStatus.GENERATING)
+        output_dir = Path(settings.output_dir) / job.id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        (output_dir / "prompt.md").write_text(prompt, encoding="utf-8")
+
+        image_path = str(output_dir / "infographic.png")
+        actual_path = await generate_image(
+            prompt=prompt,
+            output_path=image_path,
+            aspect_ratio=job.aspect_ratio,
+        )
+        actual_name = Path(actual_path).name
+        job.image_url = f"/output/{job.id}/{actual_name}"
+
+        await job_manager.update_status(job.id, JobStatus.COMPLETED)
+
+    except Exception as e:
+        await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))
+        raise

@@ -6,7 +6,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
-const pipelineSteps = [
+const fullPipelineSteps = [
   { key: "analyzing", label: "Analyzing Content", icon: "magnify" },
   { key: "structuring", label: "Structuring Content", icon: "layers" },
   { key: "recommending", label: "Finding Best Combinations", icon: "palette" },
@@ -14,8 +14,13 @@ const pipelineSteps = [
   { key: "generating", label: "Generating Infographic", icon: "image" },
 ];
 
+const restylePipelineSteps = [
+  { key: "crafting", label: "Crafting Prompt", icon: "pen" },
+  { key: "generating", label: "Generating Infographic", icon: "image" },
+];
+
 export function StepProgress() {
-  const { jobId, setStep } = useGenerationStore();
+  const { jobId, sourceJobId, setStep } = useGenerationStore();
   const { data: job } = useJobStatus(jobId);
 
   useEffect(() => {
@@ -24,6 +29,9 @@ export function StepProgress() {
     }
   }, [job?.status, setStep]);
 
+  const isRestyle = !!sourceJobId;
+  const pipelineSteps = isRestyle ? restylePipelineSteps : fullPipelineSteps;
+
   const progress = job?.progress?.progress ?? 0;
   const currentStep = job?.status ?? "queued";
   const message = job?.progress?.message ?? "Starting...";
@@ -31,7 +39,9 @@ export function StepProgress() {
   return (
     <div className="space-y-8 py-8">
       <div className="text-center">
-        <h2 className="text-xl font-semibold mb-2">Creating your infographic</h2>
+        <h2 className="text-xl font-semibold mb-2">
+          {isRestyle ? "Restyling your infographic" : "Creating your infographic"}
+        </h2>
         <p className="text-sm text-muted">{message}</p>
       </div>
 

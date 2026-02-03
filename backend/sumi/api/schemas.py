@@ -56,6 +56,13 @@ class GenerateRequest(BaseModel):
     language: str = "English"
 
 
+class RestyleRequest(BaseModel):
+    style_id: str
+    layout_id: str | None = None
+    aspect_ratio: str = "16:9"
+    language: str = "English"
+
+
 class GenerateResponse(BaseModel):
     job_id: str
 
