@@ -58,6 +58,7 @@ RESTYLE_STEP_MESSAGES = {
 class Job:
     id: str
     topic: str
+    user_id: str | None = None
     style_id: str | None = None
     layout_id: str | None = None
     text_labels: list[str] | None = None

@@ -3,6 +3,8 @@
 import { useUIStore, View } from "@/lib/stores/ui-store";
 import { useGenerationStore } from "@/lib/stores/generation-store";
 import { cn } from "@/lib/utils";
+import { GenerationHistory } from "@/components/layout/generation-history";
+import { UserMenu } from "@/components/layout/user-menu";
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar, currentView, setView } = useUIStore();
@@ -62,14 +64,12 @@ export function Sidebar() {
               <SidebarLink icon="grid" label="All Generations" active={currentView === "home"} onClick={() => navigate("home")} />
               <SidebarLink icon="palette" label="Style Catalog" active={currentView === "catalog"} onClick={() => navigate("catalog")} />
             </div>
+
+            <GenerationHistory />
           </nav>
 
-          {/* Footer */}
-          <div className="border-t border-border px-4 py-3">
-            <p className="text-xs text-muted">
-              Sumi v0.1.0
-            </p>
-          </div>
+          {/* User */}
+          <UserMenu />
         </div>
       </aside>
     </>

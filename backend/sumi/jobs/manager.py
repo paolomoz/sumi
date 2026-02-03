@@ -23,11 +23,13 @@ class JobManager:
         text_labels: list[str] | None = None,
         aspect_ratio: str = "16:9",
         language: str = "English",
+        user_id: str | None = None,
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]
         job = Job(
             id=job_id,
             topic=topic,
+            user_id=user_id,
             style_id=style_id,
             layout_id=layout_id,
             text_labels=text_labels,
@@ -49,6 +51,7 @@ class JobManager:
         job = Job(
             id=job_id,
             topic=source_job.topic,
+            user_id=source_job.user_id,
             style_id=style_id,
             layout_id=layout_id or source_job.layout_id,
             text_labels=source_job.text_labels,

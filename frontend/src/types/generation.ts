@@ -34,3 +34,15 @@ export interface JobStatus {
 }
 
 export type WizardStep = "topic" | "style" | "confirm" | "progress" | "result";
+
+export interface GenerationHistoryItem {
+  id: string;
+  topic: string;
+  style_id: string | null;
+  style_name: string | null;
+  layout_id: string | null;
+  layout_name: string | null;
+  image_url: string | null;
+  aspect_ratio: string;
+  created_at: string;
+}

@@ -1,5 +1,5 @@
 import { Layout, Style, CombinationRecommendation } from "@/types/style";
-import { GenerateRequest, JobStatus } from "@/types/generation";
+import { GenerateRequest, GenerationHistoryItem, JobStatus } from "@/types/generation";
 
 const API_BASE = "/api";
 
@@ -69,4 +69,10 @@ export async function restyleJob(
 
 export function createJobSSE(jobId: string): EventSource {
   return new EventSource(`${API_BASE}/jobs/${jobId}/stream`);
+}
+
+// History
+export async function fetchHistory(): Promise<GenerationHistoryItem[]> {
+  const data = await fetchJson<{ generations: GenerationHistoryItem[] }>("/history");
+  return data.generations;
 }

@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 from sumi.api.schemas import (
@@ -24,7 +24,10 @@ router = APIRouter(prefix="/api", tags=["generation"])
 
 
 @router.post("/generate", response_model=GenerateResponse)
-async def create_generation(request: GenerateRequest):
+async def create_generation(
+    request: GenerateRequest,
+    x_user_id: str | None = Header(None),
+):
     job = job_manager.create_job(
         topic=request.topic,
         style_id=request.style_id,
@@ -32,6 +35,7 @@ async def create_generation(request: GenerateRequest):
         text_labels=request.text_labels,
         aspect_ratio=request.aspect_ratio,
         language=request.language,
+        user_id=x_user_id,
     )
     # Launch pipeline as background task
     asyncio.create_task(run_pipeline(job))
@@ -81,7 +85,11 @@ async def get_job_status(job_id: str):
 
 
 @router.post("/jobs/{job_id}/restyle", response_model=GenerateResponse)
-async def restyle_job(job_id: str, request: RestyleRequest):
+async def restyle_job(
+    job_id: str,
+    request: RestyleRequest,
+    x_user_id: str | None = Header(None),
+):
     source_job = job_manager.get_job(job_id)
     if not source_job:
         raise HTTPException(status_code=404, detail="Source job not found")

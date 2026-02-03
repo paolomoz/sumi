@@ -1,6 +1,8 @@
+import logging
 from pathlib import Path
 
 from sumi.config import settings
+from sumi.db import get_db
 from sumi.jobs.models import Job, JobStatus
 from sumi.jobs.manager import job_manager
 from sumi.engine.content_analyzer import analyze_content
@@ -9,6 +11,37 @@ from sumi.engine.combination_recommender import recommend_combinations
 from sumi.engine.prompt_crafter import craft_prompt
 from sumi.engine.image_generator import generate_image
 from sumi.references.loader import get_references
+
+logger = logging.getLogger(__name__)
+
+
+async def _save_generation(job: Job) -> None:
+    """Persist a completed generation to the database for history."""
+    if not job.user_id:
+        return
+    try:
+        db = get_db()
+        await db.execute(
+            """INSERT OR REPLACE INTO generations
+               (id, user_id, topic, style_id, style_name, layout_id, layout_name,
+                image_url, aspect_ratio, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                job.id,
+                job.user_id,
+                job.topic,
+                job.style_id,
+                job.style_name,
+                job.layout_id,
+                job.layout_name,
+                job.image_url,
+                job.aspect_ratio,
+                job.created_at.isoformat(),
+            ),
+        )
+        await db.commit()
+    except Exception:
+        logger.exception("Failed to save generation %s to database", job.id)
 
 
 async def run_pipeline(job: Job):
@@ -96,6 +129,7 @@ async def run_pipeline(job: Job):
 
         # Done
         await job_manager.update_status(job.id, JobStatus.COMPLETED)
+        await _save_generation(job)
 
     except Exception as e:
         await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))
@@ -158,6 +192,7 @@ async def run_restyle_pipeline(job: Job):
         job.image_url = f"/output/{job.id}/{actual_name}"
 
         await job_manager.update_status(job.id, JobStatus.COMPLETED)
+        await _save_generation(job)
 
     except Exception as e:
         await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))

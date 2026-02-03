@@ -1,15 +1,24 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useGenerationStore } from "@/lib/stores/generation-store";
 import { useJobStatus } from "@/lib/hooks/use-generation";
+import { useInvalidateHistory } from "@/lib/hooks/use-history";
 import { ResultViewer } from "@/components/result/result-viewer";
 
 export function StepResult() {
   const { jobId, reset, setStep, setSourceJobId } = useGenerationStore();
   const { data: job } = useJobStatus(jobId);
+  const invalidateHistory = useInvalidateHistory();
 
   const result = job?.result;
+
+  useEffect(() => {
+    if (result) {
+      invalidateHistory();
+    }
+  }, [result, invalidateHistory]);
 
   if (!result) {
     return <div className="py-12 text-center text-sm text-muted">Loading result...</div>;
