@@ -13,7 +13,6 @@ DATA_DIR = Path(__file__).parent / "data"
 _NAME_OVERRIDES: dict[str, str] = {
     "ukiyo-e": "Ukiyo-e",
     "art-nouveau": "Art Nouveau",
-    "ui-wireframe": "UI Wireframe",
     "ikea-manual": "IKEA Manual",
     "hub-spoke": "Hub & Spoke",
 }

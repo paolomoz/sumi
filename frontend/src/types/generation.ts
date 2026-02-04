@@ -25,12 +25,45 @@ export interface JobResult {
   recommendations: CombinationRecommendation[] | null;
 }
 
+export interface StepDataMap {
+  analyzing?: {
+    title?: string;
+    data_type?: string;
+    complexity?: string;
+    preview?: string;
+  };
+  structuring?: {
+    preview?: string;
+  };
+  recommending?: {
+    recommendations?: Array<{
+      layout_id: string;
+      layout_name: string;
+      style_id: string;
+      style_name: string;
+      rationale: string;
+      approach: string;
+    }>;
+  };
+  selection?: {
+    style_id?: string;
+    style_name?: string;
+    layout_id?: string;
+    layout_name?: string;
+  };
+  crafting?: {
+    preview?: string;
+  };
+}
+
 export interface JobStatus {
   job_id: string;
   status: string;
   progress: JobProgress | null;
   result: JobResult | null;
   error: string | null;
+  step_data: StepDataMap | null;
+  topic: string | null;
 }
 
 export type WizardStep = "topic" | "style" | "confirm" | "progress" | "result";

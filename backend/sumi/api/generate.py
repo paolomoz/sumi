@@ -7,6 +7,7 @@ from sumi.api.schemas import (
     GenerateRequest,
     GenerateResponse,
     RestyleRequest,
+    ConfirmSelectionRequest,
     JobStatusResponse,
     JobProgress,
     JobResult,
@@ -75,13 +76,33 @@ async def get_job_status(job_id: str):
             recommendations=recommendations,
         )
 
+    # Build step_data from accumulated job state
+    step_data = job_manager.get_step_data(job_id) or None
+
     return JobStatusResponse(
         job_id=job.id,
         status=job.status.value,
         progress=progress,
         result=result,
         error=job.error,
+        step_data=step_data,
+        topic=job.topic,
     )
+
+
+@router.post("/jobs/{job_id}/confirm")
+async def confirm_selection(job_id: str, request: ConfirmSelectionRequest):
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.AWAITING_SELECTION:
+        raise HTTPException(status_code=400, detail="Job is not awaiting selection")
+
+    success = await job_manager.confirm_selection(job_id, request.layout_id, request.style_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to confirm selection")
+
+    return {"confirmed": True}
 
 
 @router.post("/jobs/{job_id}/restyle", response_model=GenerateResponse)

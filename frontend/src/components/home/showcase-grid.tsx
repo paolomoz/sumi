@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { showcaseSamples, type ShowcaseSample } from "@/data/showcase-samples";
-import { useGenerationStore } from "@/lib/stores/generation-store";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
@@ -75,19 +74,12 @@ function ShowcaseCard({
 function Lightbox({
   sample,
   onClose,
+  onCreateSimilar,
 }: {
   sample: ShowcaseSample;
   onClose: () => void;
+  onCreateSimilar?: (styleId: string, styleName: string) => void;
 }) {
-  const { openWizard, setTopic, selectStyle, setStep } = useGenerationStore();
-
-  const handleCreateSimilar = () => {
-    onClose();
-    openWizard();
-    setTopic(sample.prompt);
-    selectStyle(sample.styleId);
-    setStep("style");
-  };
 
   return (
     <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
@@ -131,7 +123,10 @@ function Lightbox({
             </div>
             <button
               type="button"
-              onClick={handleCreateSimilar}
+              onClick={() => {
+                onClose();
+                onCreateSimilar?.(sample.styleId, sample.styleName);
+              }}
               className="shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
             >
               Create similar
@@ -143,7 +138,11 @@ function Lightbox({
   );
 }
 
-export function ShowcaseGrid() {
+export function ShowcaseGrid({
+  onCreateSimilar,
+}: {
+  onCreateSimilar?: (styleId: string, styleName: string) => void;
+}) {
   const [samples, setSamples] = useState(showcaseSamples);
   useEffect(() => { setSamples(shuffle(showcaseSamples)); }, []);
   const [selectedSample, setSelectedSample] = useState<ShowcaseSample | null>(null);
@@ -165,6 +164,7 @@ export function ShowcaseGrid() {
         <Lightbox
           sample={selectedSample}
           onClose={() => setSelectedSample(null)}
+          onCreateSimilar={onCreateSimilar}
         />
       )}
     </>

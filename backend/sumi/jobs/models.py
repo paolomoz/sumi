@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -8,6 +9,7 @@ class JobStatus(str, Enum):
     ANALYZING = "analyzing"
     STRUCTURING = "structuring"
     RECOMMENDING = "recommending"
+    AWAITING_SELECTION = "awaiting_selection"
     CRAFTING = "crafting"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -19,6 +21,7 @@ STEP_PROGRESS = {
     JobStatus.ANALYZING: 0.1,
     JobStatus.STRUCTURING: 0.25,
     JobStatus.RECOMMENDING: 0.4,
+    JobStatus.AWAITING_SELECTION: 0.45,
     JobStatus.CRAFTING: 0.55,
     JobStatus.GENERATING: 0.7,
     JobStatus.COMPLETED: 1.0,
@@ -27,11 +30,12 @@ STEP_PROGRESS = {
 
 STEP_MESSAGES = {
     JobStatus.QUEUED: "Waiting in queue...",
-    JobStatus.ANALYZING: "Analyzing your topic...",
-    JobStatus.STRUCTURING: "Structuring content for the designer...",
-    JobStatus.RECOMMENDING: "Finding the best layout × style combinations...",
-    JobStatus.CRAFTING: "Crafting image generation prompt...",
-    JobStatus.GENERATING: "Generating infographic with Imagen 4...",
+    JobStatus.ANALYZING: "Reading through your topic...",
+    JobStatus.STRUCTURING: "Organizing the key information...",
+    JobStatus.RECOMMENDING: "Exploring visual styles...",
+    JobStatus.AWAITING_SELECTION: "Pick a style, or I'll go with the best match...",
+    JobStatus.CRAFTING: "Writing the design prompt...",
+    JobStatus.GENERATING: "Painting your infographic...",
     JobStatus.COMPLETED: "Your infographic is ready!",
     JobStatus.FAILED: "Generation failed",
 }
@@ -48,7 +52,7 @@ RESTYLE_STEP_PROGRESS = {
 RESTYLE_STEP_MESSAGES = {
     JobStatus.QUEUED: "Waiting in queue...",
     JobStatus.CRAFTING: "Crafting image generation prompt...",
-    JobStatus.GENERATING: "Generating infographic with Imagen 4...",
+    JobStatus.GENERATING: "Generating infographic with Nano Banana Pro 🍌...",
     JobStatus.COMPLETED: "Your infographic is ready!",
     JobStatus.FAILED: "Generation failed",
 }
@@ -77,3 +81,8 @@ class Job:
     image_url: str | None = None
     layout_name: str | None = None
     style_name: str | None = None
+
+    # Selection pause support (not serialized)
+    selection_event: asyncio.Event | None = field(default=None, repr=False)
+    confirmed_layout_id: str | None = None
+    confirmed_style_id: str | None = None

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, KeyboardEvent } from "react";
+import { useState, useRef, useCallback, useEffect, KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { uploadFiles } from "@/lib/api/client";
 
@@ -10,21 +10,39 @@ interface ChatInputProps {
   onSubmit: (text: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  skillActive?: boolean;
+  onSkillDeactivate?: () => void;
+  styleChip?: { id: string; name: string } | null;
+  onStyleChipRemove?: () => void;
 }
 
-export function ChatInput({ onSubmit, placeholder, disabled }: ChatInputProps) {
+export function ChatInput({ onSubmit, placeholder, disabled, skillActive, onSkillDeactivate, styleChip, onStyleChipRemove }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!addMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setAddMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [addMenuOpen]);
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 320)}px`;
     }
   }, []);
 
@@ -125,7 +143,7 @@ export function ChatInput({ onSubmit, placeholder, disabled }: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder={placeholder || "Describe your infographic..."}
           disabled={disabled}
-          rows={1}
+          rows={4}
           className={cn(
             "w-full resize-none border-0 bg-transparent px-2 py-2 text-sm outline-none",
             "placeholder:text-muted-foreground",
@@ -133,30 +151,107 @@ export function ChatInput({ onSubmit, placeholder, disabled }: ChatInputProps) {
           )}
         />
 
-        {/* Bottom bar: + button left, send button right */}
-        <div className="flex items-center justify-between px-1">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] transition-colors cursor-pointer",
-              "text-muted-foreground hover:text-foreground hover:bg-accent",
-              uploading && "opacity-50 cursor-not-allowed"
+        {/* Bottom bar: + button left, skill chips center, send button right */}
+        <div className="flex items-center gap-1 px-1">
+          <div className="relative" ref={addMenuRef}>
+            <button
+              type="button"
+              onClick={() => setAddMenuOpen((v) => !v)}
+              disabled={uploading}
+              className={cn(
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors cursor-pointer",
+                addMenuOpen
+                  ? "border-foreground/30 text-foreground bg-accent"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-accent",
+                uploading && "opacity-50 cursor-not-allowed"
+              )}
+              aria-label="Add"
+              title="Add files"
+            >
+              {uploading ? (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="animate-spin">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+
+            {/* Add menu popover */}
+            {addMenuOpen && (
+              <div className="absolute top-full left-0 mt-2 w-56 rounded-[var(--radius-md)] border border-border bg-card shadow-lg py-1 z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-muted-foreground">
+                    <path d="M8.5 1.5H4.5A1.5 1.5 0 003 3v10a1.5 1.5 0 001.5 1.5h7A1.5 1.5 0 0013 13V6L8.5 1.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8.5 1.5V6H13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Add from local files
+                </button>
+              </div>
             )}
-            aria-label="Attach file"
-            title="Attach files (PDF, Markdown, Text)"
-          >
-            {uploading ? (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="animate-spin">
-                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" strokeLinecap="round" />
+          </div>
+
+          {/* Skill chips when active */}
+          {skillActive && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={onSkillDeactivate}
+                className="group inline-flex items-center gap-1 rounded-[var(--radius-full)] border border-primary/30 bg-primary-light px-2.5 py-1 text-xs font-medium text-primary cursor-pointer transition-colors hover:bg-primary/10"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 group-hover:hidden">
+                  <rect x="1" y="2" width="10" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M1 4.5h10" stroke="currentColor" strokeWidth="1.2" />
+                  <path d="M4 6.5h4M4 8h2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+                </svg>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 hidden group-hover:block">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                Infographic
+              </button>
+              <button
+                type="button"
+                onClick={onSkillDeactivate}
+                className="group inline-flex items-center gap-1 rounded-[var(--radius-full)] border border-amber-300/50 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 cursor-pointer transition-colors hover:bg-amber-100/80"
+              >
+                <span className="group-hover:hidden">🍌</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 hidden group-hover:block">
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                Nano Banana Pro
+              </button>
+            </div>
+          )}
+
+          {/* Style chip from "Create Similar" */}
+          {styleChip && (
+            <button
+              type="button"
+              onClick={onStyleChipRemove}
+              className="group inline-flex items-center gap-1 rounded-[var(--radius-full)] border border-violet-300/50 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 cursor-pointer transition-colors hover:bg-violet-100/80"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 group-hover:hidden">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 6h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <path d="M6 4v4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0 hidden group-hover:block">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
-            )}
-          </button>
+              {styleChip.name}
+            </button>
+          )}
+
+          <div className="flex-1" />
 
           <button
             onClick={handleSubmit}

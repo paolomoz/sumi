@@ -1,17 +1,18 @@
 "use client";
 
-import { useUIStore, View } from "@/lib/stores/ui-store";
-import { useGenerationStore } from "@/lib/stores/generation-store";
+import { useRouter, usePathname } from "next/navigation";
+import { useUIStore } from "@/lib/stores/ui-store";
 import { cn } from "@/lib/utils";
 import { GenerationHistory } from "@/components/layout/generation-history";
 import { UserMenu } from "@/components/layout/user-menu";
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, currentView, setView } = useUIStore();
-  const { openWizard } = useGenerationStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { sidebarOpen, toggleSidebar } = useUIStore();
 
-  const navigate = (view: View) => {
-    setView(view);
+  const navigate = (path: string) => {
+    router.push(path);
     if (window.innerWidth < 1024) toggleSidebar();
   };
 
@@ -34,18 +35,18 @@ export function Sidebar() {
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex items-center gap-2 border-b border-border px-4 py-4">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 border-b border-border px-4 py-4 w-full hover:bg-accent/50 transition-colors cursor-pointer"
+          >
             <img src="/icon-circle-dark.svg" alt="" width={32} height={32} className="h-8 w-8" />
             <span className="text-lg font-semibold">Sumi</span>
-          </div>
+          </button>
 
           {/* Actions */}
           <div className="p-3">
             <button
-              onClick={() => {
-                openWizard();
-                if (window.innerWidth < 1024) toggleSidebar();
-              }}
+              onClick={() => navigate("/")}
               className="flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
@@ -61,8 +62,7 @@ export function Sidebar() {
               Library
             </div>
             <div className="space-y-0.5">
-              <SidebarLink icon="grid" label="All Generations" active={currentView === "home"} onClick={() => navigate("home")} />
-              <SidebarLink icon="palette" label="Style Catalog" active={currentView === "catalog"} onClick={() => navigate("catalog")} />
+              <SidebarLink icon="grid" label="All Generations" active={pathname === "/"} onClick={() => navigate("/")} />
             </div>
 
             <GenerationHistory />

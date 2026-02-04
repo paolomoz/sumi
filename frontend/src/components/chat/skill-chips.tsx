@@ -1,26 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Chip } from "@/components/ui/chip";
-import { useGenerationStore } from "@/lib/stores/generation-store";
-import { useUIStore } from "@/lib/stores/ui-store";
 
 const skills = [
   { id: "infographic", label: "Create Infographic", primary: true as const },
   { id: "browse", label: "Browse Styles", primary: false as const },
-  { id: "recommend", label: "Get Recommendations", primary: false as const },
 ];
 
 export function SkillChips() {
-  const { openWizard } = useGenerationStore();
-  const { setView } = useUIStore();
+  const router = useRouter();
 
   const handleClick = (id: string) => {
-    if (id === "infographic") {
-      openWizard();
-    } else if (id === "browse") {
-      setView("catalog");
-    } else if (id === "recommend") {
-      openWizard();
+    if (id === "infographic" || id === "browse") {
+      router.push("/");
     }
   };
 

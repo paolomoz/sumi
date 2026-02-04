@@ -7,7 +7,7 @@ from sumi.references.loader import get_references
 
 
 SYSTEM_PROMPT = """\
-You are an expert visual designer crafting prompts for an AI image generator (Imagen 4). \
+You are an expert visual designer crafting prompts for an AI image generator (Nano Banana Pro). \
 You will be given a layout reference, style reference, original source material, content analysis, \
 and structured content. Your job is to produce THREE sections of a prompt:
 

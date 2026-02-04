@@ -78,6 +78,16 @@ export function createJobSSE(jobId: string): EventSource {
   return new EventSource(`${API_BASE}/jobs/${jobId}/stream`);
 }
 
+export async function confirmSelection(
+  jobId: string,
+  request: { layout_id: string; style_id: string }
+): Promise<void> {
+  await fetchJson(`/jobs/${jobId}/confirm`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
 // File upload
 export interface UploadResponse {
   text: string;

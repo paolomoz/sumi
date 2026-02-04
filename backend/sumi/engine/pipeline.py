@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 
@@ -14,6 +15,8 @@ from sumi.engine.image_generator import generate_image
 from sumi.references.loader import get_references
 
 logger = logging.getLogger(__name__)
+
+SELECTION_TIMEOUT = 8  # seconds to wait for user selection
 
 
 async def _save_generation(job: Job) -> None:
@@ -46,7 +49,7 @@ async def _save_generation(job: Job) -> None:
 
 
 async def run_pipeline(job: Job):
-    """Execute the full 5-step generation pipeline for a job."""
+    """Execute the full generation pipeline for a job."""
     try:
         # Step 0: Pre-synthesize long content
         topic = await synthesize_if_needed(job.topic)
@@ -56,48 +59,95 @@ async def run_pipeline(job: Job):
         analysis = await analyze_content(topic)
         job.analysis = analysis
 
+        # Emit analysis step data
+        await job_manager.send_step_data(job.id, "analyzing", {
+            "title": analysis.get("title", ""),
+            "data_type": analysis.get("data_type", ""),
+            "complexity": analysis.get("complexity", ""),
+            "preview": (analysis.get("analysis_markdown", "") or "")[:300],
+        })
+
         # Step 2: Generate structured content
         await job_manager.update_status(job.id, JobStatus.STRUCTURING)
         structured_content = await generate_structured_content(topic, analysis)
         job.structured_content = structured_content
+
+        # Emit structuring step data
+        await job_manager.send_step_data(job.id, "structuring", {
+            "preview": (structured_content or "")[:300],
+        })
 
         # Step 3: Recommend combinations + select layout/style
         await job_manager.update_status(job.id, JobStatus.RECOMMENDING)
         recommendations = await recommend_combinations(topic, analysis)
         job.recommendations = recommendations
 
-        # Select layout and style
-        refs = get_references()
-        if job.layout_id and job.style_id:
+        # Emit recommendations step data
+        await job_manager.send_step_data(job.id, "recommending", {
+            "recommendations": recommendations,
+        })
+
+        # --- Selection pause logic ---
+        # If user already provided both style_id and layout_id, skip pause
+        if job.style_id and job.layout_id:
             selected_layout_id = job.layout_id
             selected_style_id = job.style_id
-        elif job.layout_id:
-            selected_layout_id = job.layout_id
-            # Pick style from first recommendation or fallback
-            selected_style_id = (
-                job.style_id
-                or (recommendations[0]["style_id"] if recommendations else "craft-handmade")
-            )
         elif job.style_id:
+            # Style pre-selected (e.g. "Create Similar") — pick best layout, skip pause
             selected_style_id = job.style_id
-            # Pick layout from first recommendation or fallback
-            selected_layout_id = (
-                recommendations[0]["layout_id"] if recommendations else "bento-grid"
-            )
-        elif recommendations:
-            selected_layout_id = recommendations[0]["layout_id"]
-            selected_style_id = recommendations[0]["style_id"]
-        else:
+            # Find a recommended layout that pairs with this style, or fall back
             selected_layout_id = "bento-grid"
-            selected_style_id = "craft-handmade"
+            if recommendations:
+                for rec in recommendations:
+                    if rec.get("style_id") == job.style_id:
+                        selected_layout_id = rec["layout_id"]
+                        break
+                else:
+                    selected_layout_id = recommendations[0]["layout_id"]
+        else:
+            # Auto-select best_match as default
+            if recommendations:
+                default_layout_id = recommendations[0]["layout_id"]
+                default_style_id = recommendations[0]["style_id"]
+            else:
+                default_layout_id = "bento-grid"
+                default_style_id = "craft-handmade"
+
+            # Store defaults on job
+            job.confirmed_layout_id = default_layout_id
+            job.confirmed_style_id = default_style_id
+
+            # Pause: set status to AWAITING_SELECTION and wait for user or timeout
+            job.selection_event = asyncio.Event()
+            await job_manager.update_status(job.id, JobStatus.AWAITING_SELECTION)
+
+            try:
+                await asyncio.wait_for(job.selection_event.wait(), timeout=SELECTION_TIMEOUT)
+                logger.info("Job %s: user confirmed selection", job.id)
+            except asyncio.TimeoutError:
+                logger.info("Job %s: selection timeout, using default best_match", job.id)
+
+            # Use whatever was confirmed (user override or default)
+            selected_layout_id = job.confirmed_layout_id
+            selected_style_id = job.confirmed_style_id
+            job.selection_event = None
 
         job.layout_id = selected_layout_id
         job.style_id = selected_style_id
 
+        refs = get_references()
         layout = refs.get_layout(selected_layout_id)
         style = refs.get_style(selected_style_id)
         job.layout_name = layout.name if layout else selected_layout_id
         job.style_name = style.name if style else selected_style_id
+
+        # Emit the actual selection so the frontend can display it correctly
+        await job_manager.send_step_data(job.id, "selection", {
+            "style_id": selected_style_id,
+            "style_name": job.style_name,
+            "layout_id": selected_layout_id,
+            "layout_name": job.layout_name,
+        })
 
         # Step 4: Craft prompt (LLM-assisted creative synthesis)
         await job_manager.update_status(job.id, JobStatus.CRAFTING)
@@ -112,6 +162,11 @@ async def run_pipeline(job: Job):
             language=job.language,
         )
         job.prompt = prompt
+
+        # Emit crafting step data
+        await job_manager.send_step_data(job.id, "crafting", {
+            "preview": (prompt or "")[:300],
+        })
 
         # Step 5: Generate image
         await job_manager.update_status(job.id, JobStatus.GENERATING)

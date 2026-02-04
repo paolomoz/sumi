@@ -79,6 +79,8 @@ class JobStatusResponse(BaseModel):
     progress: JobProgress | None = None
     result: "JobResult | None" = None
     error: str | None = None
+    step_data: dict | None = None
+    topic: str | None = None
 
 
 class JobResult(BaseModel):
@@ -89,6 +91,11 @@ class JobResult(BaseModel):
     style_name: str | None = None
     analysis: dict | None = None
     recommendations: list[CombinationRecommendation] | None = None
+
+
+class ConfirmSelectionRequest(BaseModel):
+    layout_id: str
+    style_id: str
 
 
 # --- Health ---

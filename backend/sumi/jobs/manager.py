@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import uuid
 from collections import defaultdict
 
@@ -9,11 +10,14 @@ from sumi.jobs.models import (
     RESTYLE_STEP_PROGRESS, RESTYLE_STEP_MESSAGES,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class JobManager:
     def __init__(self):
         self._jobs: dict[str, Job] = {}
         self._listeners: dict[str, list[asyncio.Queue]] = defaultdict(list)
+        self._step_data: dict[str, dict[str, dict]] = defaultdict(dict)
 
     def create_job(
         self,
@@ -69,6 +73,9 @@ class JobManager:
     def get_job(self, job_id: str) -> Job | None:
         return self._jobs.get(job_id)
 
+    def get_step_data(self, job_id: str) -> dict[str, dict]:
+        return dict(self._step_data.get(job_id, {}))
+
     async def update_status(self, job_id: str, status: JobStatus, error: str | None = None):
         job = self._jobs.get(job_id)
         if not job:
@@ -84,12 +91,35 @@ class JobManager:
         progress_map = RESTYLE_STEP_PROGRESS if is_restyle else STEP_PROGRESS
         message_map = RESTYLE_STEP_MESSAGES if is_restyle else STEP_MESSAGES
         event = {
+            "type": "status",
             "status": status.value,
             "progress": progress_map.get(status, 0),
             "message": message_map.get(status, ""),
         }
         for queue in self._listeners.get(job_id, []):
             await queue.put(event)
+
+    async def send_step_data(self, job_id: str, step: str, data: dict):
+        """Emit step_data event and accumulate for reconnection replay."""
+        self._step_data[job_id][step] = data
+        event = {
+            "type": "step_data",
+            "step": step,
+            "data": data,
+        }
+        for queue in self._listeners.get(job_id, []):
+            await queue.put(event)
+
+    async def confirm_selection(self, job_id: str, layout_id: str, style_id: str) -> bool:
+        """Confirm style/layout selection for a paused job."""
+        job = self._jobs.get(job_id)
+        if not job or job.status != JobStatus.AWAITING_SELECTION:
+            return False
+        job.confirmed_layout_id = layout_id
+        job.confirmed_style_id = style_id
+        if job.selection_event:
+            job.selection_event.set()
+        return True
 
     def subscribe(self, job_id: str) -> asyncio.Queue:
         queue: asyncio.Queue = asyncio.Queue()
@@ -114,22 +144,35 @@ class JobManager:
                 yield {
                     "event": "status",
                     "data": json.dumps({
+                        "type": "status",
                         "status": job.status.value,
                         "progress": progress_map.get(job.status, 0),
                         "message": message_map.get(job.status, ""),
                     }),
                 }
 
+                # Replay accumulated step data for reconnection resilience
+                for step, data in self._step_data.get(job_id, {}).items():
+                    yield {
+                        "event": "step_data",
+                        "data": json.dumps({
+                            "type": "step_data",
+                            "step": step,
+                            "data": data,
+                        }),
+                    }
+
             while True:
                 event = await asyncio.wait_for(queue.get(), timeout=600)
+                event_type = event.get("type", "status")
                 data = {
-                    "event": "status",
+                    "event": event_type,
                     "data": json.dumps(event),
                 }
                 yield data
-                if event["status"] in (JobStatus.COMPLETED.value, JobStatus.FAILED.value):
+                if event.get("status") in (JobStatus.COMPLETED.value, JobStatus.FAILED.value):
                     # Send final result for completed jobs
-                    if event["status"] == JobStatus.COMPLETED.value and job:
+                    if event.get("status") == JobStatus.COMPLETED.value and job:
                         yield {
                             "event": "result",
                             "data": json.dumps({

@@ -5,7 +5,6 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MainContent } from "@/components/layout/main-content";
-import { GenerationWizard } from "@/components/generation/generation-wizard";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -52,7 +51,6 @@ export default function RootLayout({
             <Sidebar />
             <MainContent>{children}</MainContent>
           </div>
-          <GenerationWizard />
         </Providers>
       </body>
     </html>
