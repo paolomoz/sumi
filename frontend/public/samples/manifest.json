@@ -1,0 +1,182 @@
+[
+  {
+    "id": 0,
+    "prompt": "How CRISPR Gene Editing Works",
+    "styleId": "art-nouveau",
+    "styleName": "Art Nouveau",
+    "layoutId": "hub-spoke",
+    "imageUrl": "/samples/0.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 1,
+    "prompt": "The History of Coffee: From Ethiopia to Your Cup",
+    "styleId": "storybook-watercolor",
+    "styleName": "Storybook Watercolor",
+    "layoutId": "winding-roadmap",
+    "imageUrl": "/samples/1.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 2,
+    "prompt": "Machine Learning Pipeline: From Data to Deployment",
+    "styleId": "technical-schematic",
+    "styleName": "Technical Schematic",
+    "layoutId": "linear-progression",
+    "imageUrl": "/samples/2.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 3,
+    "prompt": "The Water Cycle",
+    "styleId": "kawaii",
+    "styleName": "Kawaii",
+    "layoutId": "circular-flow",
+    "imageUrl": "/samples/3.jpg",
+    "aspectRatio": "4:3"
+  },
+  {
+    "id": 4,
+    "prompt": "Bitcoin & Blockchain: How Cryptocurrency Works",
+    "styleId": "cyberpunk-neon",
+    "styleName": "Cyberpunk Neon",
+    "layoutId": "structural-breakdown",
+    "imageUrl": "/samples/4.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 5,
+    "prompt": "Photosynthesis: Nature's Solar Panel",
+    "styleId": "origami",
+    "styleName": "Origami",
+    "layoutId": "tree-branching",
+    "imageUrl": "/samples/5.jpg",
+    "aspectRatio": "4:3"
+  },
+  {
+    "id": 6,
+    "prompt": "The Evolution of Programming Languages: 1950-2024",
+    "styleId": "pixel-art",
+    "styleName": "Pixel Art",
+    "layoutId": "comic-strip",
+    "imageUrl": "/samples/6.jpg",
+    "aspectRatio": "9:16"
+  },
+  {
+    "id": 7,
+    "prompt": "How the Human Immune System Fights Disease",
+    "styleId": "corporate-memphis",
+    "styleName": "Corporate Memphis",
+    "layoutId": "bento-grid",
+    "imageUrl": "/samples/7.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 8,
+    "prompt": "Space Exploration Milestones",
+    "styleId": "bold-graphic",
+    "styleName": "Bold Graphic",
+    "layoutId": "story-mountain",
+    "imageUrl": "/samples/8.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 9,
+    "prompt": "The Science of Sleep",
+    "styleId": "ukiyo-e",
+    "styleName": "Ukiyo-e",
+    "layoutId": "hierarchical-layers",
+    "imageUrl": "/samples/9.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 10,
+    "prompt": "Agile vs Waterfall: Project Management Compared",
+    "styleId": "ikea-manual",
+    "styleName": "IKEA Manual",
+    "layoutId": "comparison-matrix",
+    "imageUrl": "/samples/10.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 11,
+    "prompt": "How Electric Vehicle Batteries Work",
+    "styleId": "knolling",
+    "styleName": "Knolling",
+    "layoutId": "dashboard",
+    "imageUrl": "/samples/11.jpg",
+    "aspectRatio": "4:3"
+  },
+  {
+    "id": 12,
+    "prompt": "The Carbon Cycle and Climate Change",
+    "styleId": "chalkboard",
+    "styleName": "Chalkboard",
+    "layoutId": "iceberg",
+    "imageUrl": "/samples/12.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 13,
+    "prompt": "Neural Network Architecture: Layers and Learning",
+    "styleId": "subway-map",
+    "styleName": "Subway Map",
+    "layoutId": "funnel",
+    "imageUrl": "/samples/13.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 14,
+    "prompt": "The Journey of a Coffee Bean",
+    "styleId": "craft-handmade",
+    "styleName": "Craft Handmade",
+    "layoutId": "bridge",
+    "imageUrl": "/samples/14.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 15,
+    "prompt": "World's Major Ocean Currents",
+    "styleId": "aged-academia",
+    "styleName": "Aged Academia",
+    "layoutId": "isometric-map",
+    "imageUrl": "/samples/15.jpg",
+    "aspectRatio": "4:3"
+  },
+  {
+    "id": 16,
+    "prompt": "How a Compiler Transforms Code",
+    "styleId": "ui-wireframe",
+    "styleName": "UI Wireframe",
+    "layoutId": "jigsaw",
+    "imageUrl": "/samples/16.jpg",
+    "aspectRatio": "3:4"
+  },
+  {
+    "id": 17,
+    "prompt": "The Periodic Table of Elements",
+    "styleId": "lego-brick",
+    "styleName": "Lego Brick",
+    "layoutId": "periodic-table",
+    "imageUrl": "/samples/17.jpg",
+    "aspectRatio": "16:9"
+  },
+  {
+    "id": 18,
+    "prompt": "Startup Funding Stages: From Seed to IPO",
+    "styleId": "adobe-slide",
+    "styleName": "Adobe Slide",
+    "layoutId": "binary-comparison",
+    "imageUrl": "/samples/18.jpg",
+    "aspectRatio": "9:16"
+  },
+  {
+    "id": 19,
+    "prompt": "How Vaccines Train Your Immune System",
+    "styleId": "claymation",
+    "styleName": "Claymation",
+    "layoutId": "venn-diagram",
+    "imageUrl": "/samples/19.jpg",
+    "aspectRatio": "3:4"
+  }
+]
