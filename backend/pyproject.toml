@@ -14,6 +14,7 @@ dependencies = [
     "tenacity>=9.0.0",
     "Pillow>=11.0.0",
     "python-multipart>=0.0.12",
+    "pypdf>=4.0.0",
     "aiosqlite>=0.20.0",
 ]
 

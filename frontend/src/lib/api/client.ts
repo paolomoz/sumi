@@ -10,7 +10,14 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(error.detail || "Request failed");
+    let message = "Request failed";
+    if (typeof error.detail === "string") {
+      message = error.detail;
+    } else if (Array.isArray(error.detail)) {
+      // FastAPI validation errors: [{loc, msg, type}, ...]
+      message = error.detail.map((e: { msg: string }) => e.msg).join("; ");
+    }
+    throw new Error(message);
   }
   return response.json();
 }
@@ -69,6 +76,35 @@ export async function restyleJob(
 
 export function createJobSSE(jobId: string): EventSource {
   return new EventSource(`${API_BASE}/jobs/${jobId}/stream`);
+}
+
+// File upload
+export interface UploadResponse {
+  text: string;
+  file_names: string[];
+  char_count: number;
+}
+
+export async function uploadFiles(files: File[]): Promise<UploadResponse> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  const response = await fetch(`${API_BASE}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    let message = "Upload failed";
+    if (typeof error.detail === "string") {
+      message = error.detail;
+    } else if (Array.isArray(error.detail)) {
+      message = error.detail.map((e: { msg: string }) => e.msg).join("; ");
+    }
+    throw new Error(message);
+  }
+  return response.json();
 }
 
 // History

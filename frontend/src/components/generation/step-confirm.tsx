@@ -67,7 +67,10 @@ export function StepConfirm() {
       <div className="space-y-3">
         <Card>
           <div className="text-xs font-medium text-muted uppercase tracking-wider mb-1">Topic</div>
-          <p className="text-sm">{topic}</p>
+          <p className="text-sm line-clamp-4">{topic}</p>
+          {topic.length > 300 && (
+            <p className="text-xs text-muted mt-1">{topic.length.toLocaleString()} characters</p>
+          )}
         </Card>
 
         <Card>

@@ -5,6 +5,7 @@ from sumi.config import settings
 from sumi.db import get_db
 from sumi.jobs.models import Job, JobStatus
 from sumi.jobs.manager import job_manager
+from sumi.engine.content_synthesizer import synthesize_if_needed
 from sumi.engine.content_analyzer import analyze_content
 from sumi.engine.content_structurer import generate_structured_content
 from sumi.engine.combination_recommender import recommend_combinations
@@ -47,19 +48,22 @@ async def _save_generation(job: Job) -> None:
 async def run_pipeline(job: Job):
     """Execute the full 5-step generation pipeline for a job."""
     try:
+        # Step 0: Pre-synthesize long content
+        topic = await synthesize_if_needed(job.topic)
+
         # Step 1: Analyze content
         await job_manager.update_status(job.id, JobStatus.ANALYZING)
-        analysis = await analyze_content(job.topic)
+        analysis = await analyze_content(topic)
         job.analysis = analysis
 
         # Step 2: Generate structured content
         await job_manager.update_status(job.id, JobStatus.STRUCTURING)
-        structured_content = await generate_structured_content(job.topic, analysis)
+        structured_content = await generate_structured_content(topic, analysis)
         job.structured_content = structured_content
 
         # Step 3: Recommend combinations + select layout/style
         await job_manager.update_status(job.id, JobStatus.RECOMMENDING)
-        recommendations = await recommend_combinations(job.topic, analysis)
+        recommendations = await recommend_combinations(topic, analysis)
         job.recommendations = recommendations
 
         # Select layout and style
@@ -102,7 +106,7 @@ async def run_pipeline(job: Job):
             layout_id=selected_layout_id,
             style_id=selected_style_id,
             structured_content=structured_content,
-            topic=job.topic,
+            topic=topic,
             analysis=analysis_md,
             aspect_ratio=job.aspect_ratio,
             language=job.language,
