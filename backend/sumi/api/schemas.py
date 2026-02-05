@@ -103,3 +103,23 @@ class ConfirmSelectionRequest(BaseModel):
 class HealthResponse(BaseModel):
     status: str = "ok"
     version: str = "0.1.0"
+
+
+# --- Feedback ---
+
+class FeedbackRequest(BaseModel):
+    content: str = Field(..., min_length=20, max_length=2000)
+
+
+class FeedbackResponse(BaseModel):
+    feedback_id: str
+
+
+class FeedbackStatusResponse(BaseModel):
+    feedback_id: str
+    status: str
+    category: str | None = None
+    is_actionable: bool = False
+    pr_url: str | None = None
+    pr_branch: str | None = None
+    error: str | None = None

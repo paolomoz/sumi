@@ -25,6 +25,21 @@ CREATE TABLE IF NOT EXISTS generations (
     created_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_generations_user ON generations(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id              TEXT PRIMARY KEY,
+    user_id         TEXT,
+    content         TEXT NOT NULL,
+    category        TEXT,
+    is_actionable   INTEGER DEFAULT 0,
+    status          TEXT DEFAULT 'pending',
+    pr_url          TEXT,
+    pr_branch       TEXT,
+    llm_analysis    TEXT,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
 """
 
 

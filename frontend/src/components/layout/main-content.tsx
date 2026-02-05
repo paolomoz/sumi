@@ -1,6 +1,7 @@
 "use client";
 
 import { TopBar } from "./top-bar";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 
 export function MainContent({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
+      <FeedbackButton />
     </div>
   );
 }

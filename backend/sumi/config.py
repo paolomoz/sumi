@@ -29,5 +29,15 @@ class Settings(BaseSettings):
     # Limits
     max_concurrent_jobs: int = 5
 
+    # GitHub Integration
+    github_token: str = ""
+    github_repo_owner: str = ""
+    github_repo_name: str = ""
+    github_base_branch: str = "main"
+
+    # Feedback limits
+    feedback_rate_limit_per_hour: int = 5
+    feedback_max_files_per_pr: int = 5
+
 
 settings = Settings()
