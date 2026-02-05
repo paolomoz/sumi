@@ -27,31 +27,40 @@ class User(BaseModel):
     image: str | None = None
 
 
-def _derive_encryption_key(secret: str) -> bytes:
+def _derive_encryption_key(secret: str, salt: str, length: int = 64) -> bytes:
     """
-    Derive the encryption key from AUTH_SECRET the same way NextAuth does.
-    NextAuth uses HKDF with SHA-256 to derive a 32-byte key.
+    Derive the encryption key from AUTH_SECRET the same way Auth.js does.
+
+    Auth.js v5 uses HKDF(sha256) with:
+    - salt = cookie name (e.g. "__Secure-authjs.session-token")
+    - info = "Auth.js Generated Encryption Key ({salt})"
+    - length = 64 bytes for A256CBC-HS512
     """
-    # NextAuth uses the info string "Auth.js Generated Encryption Key"
-    # and derives a 32-byte key using HKDF
     import hmac
 
-    # Simplified HKDF-Extract + HKDF-Expand for NextAuth compatibility
-    # NextAuth v5 uses: hkdf(sha256, secret, salt="", info="Auth.js Generated Encryption Key", keylen=32)
-    info = b"Auth.js Generated Encryption Key"
+    info = f"Auth.js Generated Encryption Key ({salt})".encode()
+    salt_bytes = salt.encode() if salt else b"\x00" * 32
 
-    # HKDF Extract (with empty salt, PRK = HMAC(0x00...00, IKM))
-    salt = b"\x00" * 32
-    prk = hmac.new(salt, secret.encode(), hashlib.sha256).digest()
+    # HKDF-Extract
+    prk = hmac.new(salt_bytes, secret.encode(), hashlib.sha256).digest()
 
-    # HKDF Expand
+    # HKDF-Expand (need ceil(length/32) blocks)
     t = b""
     okm = b""
-    for i in range(1, 2):  # We only need 32 bytes = 1 block
+    for i in range(1, (length // 32) + 2):
         t = hmac.new(prk, t + info + bytes([i]), hashlib.sha256).digest()
         okm += t
+        if len(okm) >= length:
+            break
 
-    return okm[:32]
+    return okm[:length]
+
+
+# Cookie names Auth.js may use (secure for HTTPS, plain for HTTP)
+_COOKIE_NAMES = [
+    "__Secure-authjs.session-token",
+    "authjs.session-token",
+]
 
 
 def _decrypt_session_token(token: str, secret: str) -> dict | None:
@@ -59,20 +68,21 @@ def _decrypt_session_token(token: str, secret: str) -> dict | None:
     if not token or not secret:
         return None
 
-    try:
-        # Derive the encryption key
-        key = _derive_encryption_key(secret)
+    import json
 
-        # Decrypt the JWE token
-        decrypted = jwe.decrypt(token, key)
+    # Try each possible cookie name as the HKDF salt, since Auth.js uses
+    # the cookie name as the salt for key derivation.
+    for cookie_name in _COOKIE_NAMES:
+        try:
+            key = _derive_encryption_key(secret, salt=cookie_name, length=64)
+            decrypted = jwe.decrypt(token, key)
+            payload = json.loads(decrypted)
+            return payload
+        except Exception:
+            continue
 
-        # Parse the JSON payload
-        import json
-        payload = json.loads(decrypted)
-        return payload
-    except Exception as e:
-        logger.debug(f"Failed to decrypt session token: {e}")
-        return None
+    logger.debug("Failed to decrypt session token with any known cookie name")
+    return None
 
 
 async def get_current_user(
