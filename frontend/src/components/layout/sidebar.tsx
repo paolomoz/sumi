@@ -59,7 +59,7 @@ export function Sidebar() {
           <div className="p-3">
             <button
               onClick={() => navigate("/")}
-              className="flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
+              className="flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2.5 text-sm font-medium hover:bg-accent hover:translate-x-0.5 transition-all duration-150 cursor-pointer"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0">
                 <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
