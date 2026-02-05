@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signIn } from "next-auth/react";
 import { ChatInput } from "@/components/chat/chat-input";
 import { useStartGeneration } from "@/lib/hooks/use-generation";
 
@@ -12,10 +13,20 @@ interface HomeHeroProps {
 
 export function HomeHero({ preselectedStyle, onClearStyle }: HomeHeroProps) {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const startGeneration = useStartGeneration();
   const [skillActive, setSkillActive] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [pendingTopic, setPendingTopic] = useState("");
 
   const handleSubmit = async (text: string) => {
+    // Check if user is logged in
+    if (!session) {
+      setPendingTopic(text);
+      setShowAuthPrompt(true);
+      return;
+    }
+
     try {
       const result = await startGeneration.mutateAsync({
         topic: text,
@@ -33,7 +44,7 @@ export function HomeHero({ preselectedStyle, onClearStyle }: HomeHeroProps) {
       <ChatInput
         onSubmit={handleSubmit}
         placeholder="Describe your infographic topic..."
-        disabled={startGeneration.isPending}
+        disabled={startGeneration.isPending || status === "loading"}
         skillActive={skillActive}
         onSkillDeactivate={() => setSkillActive(false)}
         styleChip={preselectedStyle}
@@ -43,6 +54,54 @@ export function HomeHero({ preselectedStyle, onClearStyle }: HomeHeroProps) {
         <p className="text-xs text-red-500 text-center">
           {startGeneration.error?.message || "Failed to start generation"}
         </p>
+      )}
+
+      {/* Auth prompt modal */}
+      {showAuthPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md mx-4 rounded-[var(--radius-lg)] border border-border bg-card p-6 shadow-xl">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-foreground">
+                  <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
+                  <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Sign in to continue</h2>
+                <p className="text-sm text-muted mt-1">
+                  Create an account to generate infographics and save your history.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => signIn("google")}
+                  className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-foreground text-background px-4 py-2.5 text-sm font-medium hover:bg-foreground/90 transition-colors cursor-pointer"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M16.354 7.363H15.75V7.313H9v3.375h4.239a5.063 5.063 0 0 1-9.739-1.875 5.063 5.063 0 0 1 5.063-5.063c1.279 0 2.441.483 3.327 1.27l2.387-2.387A8.438 8.438 0 0 0 9 .563a8.438 8.438 0 1 0 7.354 6.8Z" fill="currentColor" />
+                  </svg>
+                  Continue with Google
+                </button>
+                <button
+                  onClick={() => signIn("github")}
+                  className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-border px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 1.125a7.875 7.875 0 0 0-2.49 15.345c.394.073.538-.17.538-.379 0-.187-.007-.681-.011-1.338-2.19.476-2.651-1.055-2.651-1.055-.358-.909-.874-1.15-.874-1.15-.714-.488.054-.478.054-.478.79.056 1.206.81 1.206.81.702 1.203 1.841.855 2.29.654.071-.508.274-.856.499-1.053-1.748-.199-3.586-.874-3.586-3.888 0-.859.307-1.561.81-2.11-.081-.199-.35-.998.077-2.081 0 0 .66-.211 2.163.806A7.527 7.527 0 0 1 9 4.929c.668.003 1.341.09 1.97.266 1.502-1.017 2.161-.806 2.161-.806.428 1.083.159 1.882.078 2.08.504.55.809 1.252.809 2.111 0 3.021-1.84 3.686-3.593 3.881.282.243.534.723.534 1.458 0 1.052-.01 1.901-.01 2.16 0 .211.143.456.542.378A7.876 7.876 0 0 0 9 1.125Z" fill="currentColor" />
+                  </svg>
+                  Continue with GitHub
+                </button>
+              </div>
+              <button
+                onClick={() => setShowAuthPrompt(false)}
+                className="text-sm text-muted hover:text-foreground transition-colors cursor-pointer pt-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Skill chips — invisible (but space-preserving) when a skill is active */}

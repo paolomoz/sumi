@@ -13,8 +13,20 @@ DATA_DIR = Path(__file__).parent / "data"
 _NAME_OVERRIDES: dict[str, str] = {
     "ukiyo-e": "Ukiyo-e",
     "art-nouveau": "Art Nouveau",
+    "art-nouveau-mucha": "Art Nouveau (Mucha)",
     "ikea-manual": "IKEA Manual",
     "hub-spoke": "Hub & Spoke",
+    "shan-shui": "Shan-Shui",
+    "sumi-e": "Sumi-e",
+    "saul-bass": "Saul Bass",
+    "paul-rand": "Paul Rand",
+    "pop-art-lichtenstein": "Pop Art (Lichtenstein)",
+    "keith-haring": "Keith Haring",
+    "daniel-clowes": "Daniel Clowes",
+    "osamu-tezuka": "Osamu Tezuka",
+    "studio-ghibli": "Studio Ghibli",
+    "richard-scarry": "Richard Scarry",
+    "dr-seuss": "Dr. Seuss",
 }
 
 
