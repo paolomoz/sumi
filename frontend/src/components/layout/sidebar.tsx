@@ -4,7 +4,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { cn } from "@/lib/utils";
 import { GenerationHistory } from "@/components/layout/generation-history";
-import { UserMenu } from "@/components/layout/user-menu";
 
 export function Sidebar() {
   const router = useRouter();
@@ -80,9 +79,6 @@ export function Sidebar() {
 
             <GenerationHistory />
           </nav>
-
-          {/* User */}
-          <UserMenu />
         </div>
       </aside>
     </>
