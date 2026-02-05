@@ -10,7 +10,7 @@ export function FeedbackButton() {
     <>
       <button
         onClick={() => setDialogOpen(true)}
-        className="fixed bottom-4 right-4 z-40 w-12 h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary-hover transition-colors flex items-center justify-center"
+        className="fixed bottom-4 right-4 z-40 w-14 h-14 md:w-12 md:h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary-hover transition-colors flex items-center justify-center"
         aria-label="Send feedback"
       >
         <svg
