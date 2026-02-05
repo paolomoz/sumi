@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.sumi.you"),
   title: "Sumi — Artistic Infographic Generator",
   description:
     "Create beautiful infographics in 126 artistic styles. AI-powered generation with accurate typography.",
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
+    url: "https://www.sumi.you",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
