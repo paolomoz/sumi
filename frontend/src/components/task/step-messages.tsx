@@ -65,6 +65,8 @@ export function StructuringDoneMessage({ preview }: StructuringDoneProps) {
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { confirmSelection } from "@/lib/api/client";
+import { useStyles } from "@/lib/hooks/use-references";
+import { cn } from "@/lib/utils";
 
 const COUNTDOWN_SECONDS = 20;
 
@@ -84,22 +86,29 @@ export function StyleCountdown({
   isAwaitingSelection,
 }: StyleCountdownProps) {
   const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS);
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const confirmedRef = useRef(false);
+  const { data: allStyles } = useStyles();
 
-  const autoConfirm = useCallback(async () => {
+  const bestMatch = recommendations[0];
+
+  const confirmStyle = useCallback(async (styleId: string, layoutId: string) => {
     if (confirmedRef.current) return;
     confirmedRef.current = true;
-    const rec = recommendations[0];
-    if (!rec) return;
     try {
       await confirmSelection(jobId, {
-        layout_id: rec.layout_id,
-        style_id: rec.style_id,
+        layout_id: layoutId,
+        style_id: styleId,
       });
     } catch {
       // pipeline uses default on timeout
     }
-  }, [jobId, recommendations]);
+  }, [jobId]);
+
+  const autoConfirm = useCallback(async () => {
+    if (!bestMatch) return;
+    await confirmStyle(bestMatch.style_id, bestMatch.layout_id);
+  }, [bestMatch, confirmStyle]);
 
   useEffect(() => {
     if (!isAwaitingSelection || confirmedRef.current) return;
@@ -117,12 +126,72 @@ export function StyleCountdown({
     return () => clearInterval(id);
   }, [isAwaitingSelection, autoConfirm]);
 
+  const handleStyleSelect = (styleId: string) => {
+    if (!bestMatch || confirmedRef.current) return;
+    setSelectedStyleId(styleId);
+    confirmStyle(styleId, bestMatch.layout_id);
+  };
+
   if (!isAwaitingSelection) return null;
 
   return (
-    <div className="text-sm leading-relaxed text-muted">
-      Pick a style from the panel, or I&rsquo;ll choose one for you in{" "}
-      <strong className="text-foreground">{seconds}s</strong>&hellip;
+    <div className="space-y-3">
+      {/* Desktop: text prompt pointing to panel */}
+      <div className="hidden lg:block text-sm leading-relaxed text-muted">
+        Pick a style from the panel, or I&rsquo;ll choose one for you in{" "}
+        <strong className="text-foreground">{seconds}s</strong>&hellip;
+      </div>
+
+      {/* Mobile: inline style picker */}
+      <div className="lg:hidden space-y-3">
+        <div className="text-sm leading-relaxed text-muted">
+          Pick a style, or I&rsquo;ll choose one for you in{" "}
+          <strong className="text-foreground">{seconds}s</strong>&hellip;
+        </div>
+
+        {allStyles && allStyles.length > 0 && (
+          <div className="rounded-[var(--radius-lg)] border border-border bg-card p-3">
+            <div className="max-h-48 overflow-y-auto -mr-1 pr-1">
+              <div className="grid grid-cols-3 gap-2">
+                {allStyles.map((style) => {
+                  const isBestMatch = style.id === bestMatch?.style_id;
+                  const isSelected = selectedStyleId === style.id;
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => handleStyleSelect(style.id)}
+                      disabled={confirmedRef.current}
+                      className={cn(
+                        "relative text-left rounded-[var(--radius-md)] border p-1.5 transition-all cursor-pointer",
+                        "hover:border-primary/50 hover:shadow-sm",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        isSelected || (isBestMatch && !selectedStyleId)
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border"
+                      )}
+                    >
+                      {isBestMatch && !selectedStyleId && (
+                        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground font-bold">
+                          ★
+                        </span>
+                      )}
+                      <img
+                        src={`/styles/${style.id}.jpg`}
+                        alt={style.name}
+                        className="w-full aspect-[4/3] rounded object-cover mb-1"
+                      />
+                      <p className="text-[10px] font-medium truncate leading-tight">
+                        {style.name}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

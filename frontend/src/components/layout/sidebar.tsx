@@ -18,11 +18,12 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Mobile overlay - darker for better visibility */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={toggleSidebar}
+          aria-label="Close sidebar"
         />
       )}
 
@@ -34,14 +35,26 @@ export function Sidebar() {
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 border-b border-border px-4 py-4 w-full hover:bg-accent/50 transition-colors cursor-pointer"
-          >
-            <img src="/icon-circle-dark.svg" alt="" width={32} height={32} className="h-8 w-8" />
-            <span className="text-lg font-semibold">Sumi</span>
-          </button>
+          {/* Logo with close button on mobile */}
+          <div className="flex items-center justify-between border-b border-border px-4 py-4">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <img src="/icon-circle-dark.svg" alt="" width={32} height={32} className="h-8 w-8" />
+              <span className="text-lg font-semibold">Sumi</span>
+            </button>
+            {/* Close button - only visible on mobile */}
+            <button
+              onClick={toggleSidebar}
+              className="lg:hidden flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] hover:bg-accent transition-colors cursor-pointer"
+              aria-label="Close sidebar"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
 
           {/* Actions */}
           <div className="p-3">
