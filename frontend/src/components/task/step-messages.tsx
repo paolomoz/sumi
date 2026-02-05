@@ -63,12 +63,10 @@ export function StructuringDoneMessage({ preview }: StructuringDoneProps) {
 
 /* ---------- Recommending: Countdown ---------- */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { confirmSelection } from "@/lib/api/client";
 import { useStyles } from "@/lib/hooks/use-references";
 import { cn } from "@/lib/utils";
-
-const COUNTDOWN_SECONDS = 20;
 
 interface StyleCountdownProps {
   jobId: string;
@@ -85,7 +83,6 @@ export function StyleCountdown({
   recommendations,
   isAwaitingSelection,
 }: StyleCountdownProps) {
-  const [seconds, setSeconds] = useState(COUNTDOWN_SECONDS);
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const confirmedRef = useRef(false);
   const { data: allStyles } = useStyles();
@@ -105,27 +102,6 @@ export function StyleCountdown({
     }
   }, [jobId]);
 
-  const autoConfirm = useCallback(async () => {
-    if (!bestMatch) return;
-    await confirmStyle(bestMatch.style_id, bestMatch.layout_id);
-  }, [bestMatch, confirmStyle]);
-
-  useEffect(() => {
-    if (!isAwaitingSelection || confirmedRef.current) return;
-
-    const id = setInterval(() => {
-      setSeconds((s) => {
-        if (s <= 1) {
-          autoConfirm();
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [isAwaitingSelection, autoConfirm]);
-
   const handleStyleSelect = (styleId: string) => {
     if (!bestMatch || confirmedRef.current) return;
     setSelectedStyleId(styleId);
@@ -138,15 +114,13 @@ export function StyleCountdown({
     <div className="space-y-3">
       {/* Desktop: text prompt pointing to panel */}
       <div className="hidden lg:block text-sm leading-relaxed text-muted">
-        Pick a style from the panel, or I&rsquo;ll choose one for you in{" "}
-        <strong className="text-foreground">{seconds}s</strong>&hellip;
+        Pick a style from the panel to continue.
       </div>
 
       {/* Mobile: inline style picker */}
       <div className="lg:hidden space-y-3">
         <div className="text-sm leading-relaxed text-muted">
-          Pick a style, or I&rsquo;ll choose one for you in{" "}
-          <strong className="text-foreground">{seconds}s</strong>&hellip;
+          Pick a style to continue.
         </div>
 
         {allStyles && allStyles.length > 0 && (

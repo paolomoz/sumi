@@ -39,10 +39,11 @@ Loud, clashing, deliberately "bad taste" 1980s postmodern design — hot pink tr
 - **Columns and totems** — shapes stacked vertically like Memphis furniture legs: a cone on top of a cylinder on top of a stepped rectangle, each a different color
 - **Grid lines that wobble** — underlying grids rendered with slight irregularity, not perfectly straight, giving a playful hand-drawn quality
 - **Oversized polka dots** — large circles (not small uniform dots) scattered at irregular intervals, each a different bright color
-- **Semicircles and quarter-circles** used as standalone shapes, arches, and decorative accents — a signature Memphis form
-- **Diagonal stripe bands** in two contrasting colors (black/yellow, pink/blue) used as borders, dividers, and accent strips
+- **Semicircles and quarter-circles** used as standalone shapes, arches, and decorative accents — a signature Memphis form appearing everywhere as half-moons, arches, and rainbow curves
+- **Diagonal stripe bands** in two contrasting colors (black/yellow, pink/blue) used as borders, dividers, and accent strips — the visual duct tape of Memphis design
+- **Scattered confetti triangles** — small equilateral triangles in random rotations sprinkled across surfaces like a party just exploded
 - **NO gradients, NO shadows, NO 3D effects** — everything is flat, graphic, and boldly outlined
-- **NO subtle anything** — every color choice, pattern, and shape should feel deliberately loud
+- **NO subtle anything** — every color choice, pattern, and shape should feel deliberately loud and deliberately clashing
 
 ## Compositional Patterns
 
@@ -78,7 +79,7 @@ Loud, clashing, deliberately "bad taste" 1980s postmodern design — hot pink tr
 
 ## Typography
 
-- Heavy bold sans-serif — chunky, confident, taking up space unapologetically
+- Heavy bold sans-serif — chunky, confident, taking up space unapologetically. Think Futura Extra Bold, Impact, or Cooper Black
 - Mixed weights for emphasis: ultra-bold headlines crashing against thin body text
 - Letters can overlap shapes, sit on top of patterns, break out of their containers
 - Key words in contrasting highlight colors — a yellow word on a pink panel, a blue word on white
@@ -90,19 +91,14 @@ Loud, clashing, deliberately "bad taste" 1980s postmodern design — hot pink tr
 
 ## Anti-Patterns
 
-- **NOT corporate Memphis** (the modern Silicon Valley flat illustration style). Corporate Memphis uses muted tones, squishy blobby figures, and gentle gradients. True Memphis Design uses eye-searing color clashes, thick black outlines, geometric shapes, and deliberately jarring pattern combinations. They share a name but are completely different aesthetics.
-- **NOT Bauhaus** — Bauhaus is systematic, harmonious, and purposeful. Memphis is deliberately anarchic, clashing, and irreverent. If it looks balanced and tasteful, it's wrong.
-- **NOT pop art** — Pop art uses halftone dots, comic-book imagery, and commercial references. Memphis uses geometric shapes, zigzags, terrazzo, and architectural forms. No Lichtenstein dots, no Warhol repetition.
-- **NOT vaporwave or synthwave** — those are purple/pink gradient aesthetics with grid horizons. Memphis is flat, outlined, and pattern-based with no gradients at all.
-- **NOT Art Deco** — Art Deco is symmetrical, opulent, gold-and-black luxury. Memphis is asymmetrical, plastic, and deliberately anti-luxury.
-- **NOT a clean modern infographic with Memphis colors** — the patterns and clashing combinations ARE the point. A clean grid with hot pink and blue but no zigzags, squiggles, terrazzo, or clashing patterns is just a colorful infographic, not Memphis.
+- **NOT corporate Memphis** (the modern Silicon Valley flat illustration style with squishy blobby figures). Corporate Memphis uses muted tones, gentle gradients, and rounded human figures. True Memphis Design uses eye-searing color clashes, thick black outlines, geometric shapes, and deliberately jarring pattern combinations. They share a name but are completely different aesthetics.
+- **NOT Bauhaus** — Bauhaus is systematic, harmonious, and purposeful geometry. Memphis is deliberately anarchic, clashing, and irreverent. If it looks balanced, tasteful, or carefully composed, it is wrong.
+- **NOT pop art** (pop-art-lichtenstein) — Pop art uses halftone dots, comic-book imagery, and commercial references. Memphis uses geometric shapes, zigzags, terrazzo, and architectural forms. No Ben-Day dots, no speech bubbles, no Warhol repetition.
+- **NOT vaporwave or synthwave** — Those are purple/pink gradient aesthetics with grid horizons and retro computer imagery. Memphis is flat, outlined, and pattern-based with absolutely no gradients at all.
+- **NOT Art Deco** — Art Deco is symmetrical, opulent, gold-and-black luxury. Memphis is asymmetrical, plastic, and deliberately anti-luxury. If it looks expensive, it is wrong.
+- **NOT Keith Haring** — Haring uses uniform-weight black outlines on flat-filled dancing figures and radiant babies. Memphis uses varied patterns, geometric shapes, terrazzo, and zigzags. Haring is figurative energy; Memphis is abstract pattern clash.
+- **NOT a clean modern infographic with Memphis colors** — The patterns and clashing combinations ARE the point. A clean grid with hot pink and blue but no zigzags, squiggles, terrazzo, or clashing patterns is just a colorful infographic, not Memphis.
 - This must look like an Ettore Sottsass furniture showroom exploded onto paper — loud, clashing, pattern-on-pattern, thick outlines, confetti everywhere — not a tidy graphic design exercise that happens to use bright colors.
-
-## Reference Images
-
-- `references/memphis-bold-chevron.jpg` — Bold rainbow chevron/zigzag pattern in saturated colors. Demonstrates the zigzag motif that is Memphis Design's signature pattern element — sharp V-shapes repeating in deliberately clashing color combinations
-- `references/memphis-bold-neon-blocks.jpg` — Large flat geometric color blocks in hot pink, neon green, blue, and white with bold diagonal compositions and triangular accent shapes. Shows the bold, confident, clashing color approach and geometric simplicity with thick flat fills
-- `references/memphis-zigzag-installation.jpg` — Painted wall installation with bold zigzag/chevron pattern in pink, green, yellow, red, and light blue on wood. Demonstrates Memphis pattern language applied at architectural scale — repeating geometric motifs in deliberately mismatched colors
 
 ## Best For
 

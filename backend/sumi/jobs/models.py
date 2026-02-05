@@ -33,7 +33,7 @@ STEP_MESSAGES = {
     JobStatus.ANALYZING: "Reading through your topic...",
     JobStatus.STRUCTURING: "Organizing the key information...",
     JobStatus.RECOMMENDING: "Exploring visual styles...",
-    JobStatus.AWAITING_SELECTION: "Pick a style, or I'll go with the best match...",
+    JobStatus.AWAITING_SELECTION: "Pick a style to continue.",
     JobStatus.CRAFTING: "Writing the design prompt...",
     JobStatus.GENERATING: "Painting your infographic...",
     JobStatus.COMPLETED: "Your infographic is ready!",

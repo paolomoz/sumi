@@ -19,14 +19,17 @@ _NAME_OVERRIDES: dict[str, str] = {
     "shan-shui": "Shan-Shui",
     "sumi-e": "Sumi-e",
     "saul-bass": "Saul Bass",
-    "paul-rand": "Paul Rand",
     "pop-art-lichtenstein": "Pop Art (Lichtenstein)",
     "keith-haring": "Keith Haring",
-    "daniel-clowes": "Daniel Clowes",
     "osamu-tezuka": "Osamu Tezuka",
     "studio-ghibli": "Studio Ghibli",
     "richard-scarry": "Richard Scarry",
-    "dr-seuss": "Dr. Seuss",
+    "jack-kirby": "Jack Kirby",
+    "charley-harper": "Charley Harper",
+    "dia-de-muertos": "Día de Muertos",
+    "de-stijl": "De Stijl",
+    "isotype": "ISOTYPE",
+    "ligne-claire": "Ligne Claire",
 }
 
 

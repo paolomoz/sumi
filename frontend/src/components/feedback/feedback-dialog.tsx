@@ -50,10 +50,22 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
     try {
       const { feedback_id } = await submitFeedback(content);
 
+      // Update status after successful POST
+      setStatusMessage("Received your feedback...");
+      setProgress(5);
+
       // Connect to SSE for updates
       const eventSource = createFeedbackSSE(feedback_id);
 
+      // Timeout if no updates received within 30 seconds
+      const timeout = setTimeout(() => {
+        eventSource.close();
+        // Show thank you instead of error - feedback was received
+        setState("thank_you");
+      }, 30000);
+
       eventSource.addEventListener("status", (event) => {
+        clearTimeout(timeout);
         const data: FeedbackSSEEvent = JSON.parse(event.data);
         setProgress(data.progress * 100);
         setStatusMessage(data.message);
@@ -76,10 +88,10 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       });
 
       eventSource.onerror = () => {
-        // SSE connection error - check status via polling
+        clearTimeout(timeout);
+        // SSE connection error - show thank you since feedback was received
         eventSource.close();
-        setState("error");
-        setError("Connection lost. Your feedback was received.");
+        setState("thank_you");
       };
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit feedback");
@@ -113,9 +125,13 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               className="w-full h-32 p-3 rounded-[var(--radius-md)] border border-border bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
               maxLength={2000}
             />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                {content.length}/2000
+            <div className="flex items-center justify-end gap-3">
+              <span className="text-xs">
+                {content.length < 20 ? (
+                  <span className="text-red-500">{content.length}/20 min</span>
+                ) : (
+                  <span className="text-muted-foreground">{content.length}/2000</span>
+                )}
               </span>
               <Button onClick={handleSubmit} disabled={content.length < 20}>
                 Submit

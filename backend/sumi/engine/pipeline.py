@@ -16,7 +16,7 @@ from sumi.references.loader import get_references
 
 logger = logging.getLogger(__name__)
 
-SELECTION_TIMEOUT = 8  # seconds to wait for user selection
+# No timeout – user must always select a style manually
 
 
 async def _save_generation(job: Job) -> None:
@@ -117,15 +117,12 @@ async def run_pipeline(job: Job):
             job.confirmed_layout_id = default_layout_id
             job.confirmed_style_id = default_style_id
 
-            # Pause: set status to AWAITING_SELECTION and wait for user or timeout
+            # Pause: set status to AWAITING_SELECTION and wait for user selection (no timeout)
             job.selection_event = asyncio.Event()
             await job_manager.update_status(job.id, JobStatus.AWAITING_SELECTION)
 
-            try:
-                await asyncio.wait_for(job.selection_event.wait(), timeout=SELECTION_TIMEOUT)
-                logger.info("Job %s: user confirmed selection", job.id)
-            except asyncio.TimeoutError:
-                logger.info("Job %s: selection timeout, using default best_match", job.id)
+            await job.selection_event.wait()
+            logger.info("Job %s: user confirmed selection", job.id)
 
             # Use whatever was confirmed (user override or default)
             selected_layout_id = job.confirmed_layout_id
