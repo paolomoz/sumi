@@ -25,14 +25,10 @@ export default function Home() {
     <div className="flex flex-col items-center min-h-full px-4 pt-[18vh] pb-12">
       {/* Hero + Input */}
       <div className="w-full max-w-2xl space-y-6 mb-24">
-        <div className="text-center space-y-3">
+        <div className="text-center">
           <h1 className="text-4xl font-semibold tracking-tight">
             What can I create for you?
           </h1>
-          <p className="text-muted text-base">
-            Describe a topic and we&apos;ll generate a beautiful infographic with 20
-            layouts and 16 artistic styles.
-          </p>
         </div>
 
         <HomeHero
