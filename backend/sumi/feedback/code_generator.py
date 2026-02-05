@@ -134,22 +134,45 @@ def get_project_structure() -> str:
     return "\n".join(structure)
 
 
-def get_relevant_files(affected_areas: list[str]) -> dict[str, str]:
-    """Get content of files relevant to the affected areas."""
+def get_relevant_files(affected_areas: list[str], feedback_content: str) -> dict[str, str]:
+    """Get content of files relevant to the affected areas and feedback."""
     files = {}
     max_files = 5
-    max_chars_per_file = 3000
+    max_chars_per_file = 4000
 
+    # Try to identify specific files mentioned or related to the feedback
+    feedback_lower = feedback_content.lower()
+
+    # Map keywords to specific files
+    keyword_files = {
+        "feedback button": "frontend/src/components/feedback/feedback-button.tsx",
+        "feedback dialog": "frontend/src/components/feedback/feedback-dialog.tsx",
+        "sidebar": "frontend/src/components/layout/sidebar.tsx",
+        "topic input": "frontend/src/components/home/topic-input.tsx",
+        "main content": "frontend/src/components/layout/main-content.tsx",
+        "top bar": "frontend/src/components/layout/top-bar.tsx",
+        "header": "frontend/src/components/layout/top-bar.tsx",
+    }
+
+    # Add files matching keywords in feedback
+    for keyword, file_path in keyword_files.items():
+        if keyword in feedback_lower and len(files) < max_files:
+            content = read_project_file(file_path)
+            if content:
+                if len(content) > max_chars_per_file:
+                    content = content[:max_chars_per_file] + "\n... (truncated)"
+                files[file_path] = content
+
+    # Add files based on affected areas
     for area in affected_areas:
         if len(files) >= max_files:
             break
 
         if area == "frontend/components":
-            # Include key UI components
             key_files = [
+                "frontend/src/components/feedback/feedback-button.tsx",
+                "frontend/src/components/feedback/feedback-dialog.tsx",
                 "frontend/src/components/layout/main-content.tsx",
-                "frontend/src/components/layout/sidebar.tsx",
-                "frontend/src/components/home/topic-input.tsx",
             ]
         elif area == "frontend/styles":
             key_files = ["frontend/src/app/globals.css"]
@@ -164,14 +187,65 @@ def get_relevant_files(affected_areas: list[str]) -> dict[str, str]:
         for file_path in key_files:
             if len(files) >= max_files:
                 break
-            content = read_project_file(file_path)
-            if content:
-                # Truncate long files
-                if len(content) > max_chars_per_file:
-                    content = content[:max_chars_per_file] + "\n... (truncated)"
-                files[file_path] = content
+            if file_path not in files:
+                content = read_project_file(file_path)
+                if content:
+                    if len(content) > max_chars_per_file:
+                        content = content[:max_chars_per_file] + "\n... (truncated)"
+                    files[file_path] = content
 
     return files
+
+
+def normalize_whitespace(text: str) -> str:
+    """Normalize whitespace for fuzzy matching."""
+    import re
+    # Normalize line endings and collapse multiple spaces
+    text = re.sub(r'\r\n', '\n', text)
+    text = re.sub(r'[ \t]+', ' ', text)
+    return text.strip()
+
+
+def find_best_match(needle: str, haystack: str) -> str | None:
+    """Find the best matching substring in haystack for needle.
+
+    Returns the actual substring from haystack that best matches needle,
+    or None if no good match is found.
+    """
+    # Try exact match first
+    if needle in haystack:
+        return needle
+
+    # Try normalized match
+    norm_needle = normalize_whitespace(needle)
+    norm_haystack = normalize_whitespace(haystack)
+
+    if norm_needle in norm_haystack:
+        # Find the actual position in original
+        idx = norm_haystack.find(norm_needle)
+        # This is approximate - we need to map back to original positions
+        # For now, try to find a similar line-based match
+        pass
+
+    # Try line-by-line fuzzy match
+    needle_lines = [l.strip() for l in needle.strip().split('\n') if l.strip()]
+    haystack_lines = haystack.split('\n')
+
+    if not needle_lines:
+        return None
+
+    # Find start line
+    first_line = needle_lines[0]
+    for i, line in enumerate(haystack_lines):
+        if first_line in line or line.strip() == first_line:
+            # Check if subsequent lines match
+            match_end = i + len(needle_lines)
+            if match_end <= len(haystack_lines):
+                matched_lines = haystack_lines[i:match_end]
+                # Return the actual content from the file
+                return '\n'.join(matched_lines)
+
+    return None
 
 
 def validate_changes(changes: list[CodeChange]) -> list[str]:
@@ -194,11 +268,17 @@ def validate_changes(changes: list[CodeChange]) -> list[str]:
             current_content = read_project_file(change.file_path)
             if current_content is None:
                 errors.append(f"File not found: {change.file_path}")
-            elif change.original_content and change.original_content not in current_content:
-                errors.append(
-                    f"Original content not found in {change.file_path}. "
-                    "The file may have changed or the match is inexact."
-                )
+            elif change.original_content:
+                # Try to find a fuzzy match
+                actual_match = find_best_match(change.original_content, current_content)
+                if actual_match:
+                    # Update the change with the actual matching content
+                    change.original_content = actual_match
+                else:
+                    errors.append(
+                        f"Original content not found in {change.file_path}. "
+                        "The file may have changed or the match is inexact."
+                    )
 
         # Basic syntax validation
         if change.file_path.endswith(".py"):
@@ -229,7 +309,7 @@ async def generate_code_changes(
 
     # Gather context
     project_structure = get_project_structure()
-    relevant_files = get_relevant_files(analysis.affected_areas)
+    relevant_files = get_relevant_files(analysis.affected_areas, feedback.content)
 
     files_context = ""
     for path, content in relevant_files.items():
