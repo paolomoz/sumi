@@ -100,10 +100,10 @@ function SidebarLink({
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm transition-colors cursor-pointer",
+        "flex w-full items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm transition-all duration-150 cursor-pointer",
         active
           ? "bg-accent font-medium text-foreground"
-          : "text-muted hover:bg-accent hover:text-foreground"
+          : "text-muted hover:bg-accent hover:text-foreground hover:translate-x-0.5"
       )}
     >
       {icon === "grid" && (
