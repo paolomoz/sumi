@@ -84,9 +84,10 @@ function Lightbox({
   return (
     <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/95 data-[state=open]:animate-in data-[state=open]:fade-in" />
+        {/* Fully opaque backdrop for proper modal behavior */}
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black data-[state=open]:animate-in data-[state=open]:fade-in" />
         <DialogPrimitive.Content
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center p-4 bg-black"
           aria-describedby={undefined}
         >
           <VisuallyHidden.Root>
@@ -104,33 +105,35 @@ function Lightbox({
             </svg>
           </DialogPrimitive.Close>
 
-          {/* Image */}
+          {/* Image - centered with proper mobile sizing */}
           <img
             src={sample.imageUrl}
             alt={sample.prompt}
-            className="max-h-[80vh] max-w-[90vw] object-contain"
+            className="max-h-[70vh] max-w-[92vw] object-contain rounded-lg"
           />
 
-          {/* Bottom bar */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-6 py-5 flex items-end justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/20 text-white/90 backdrop-blur-sm mb-1.5">
-                {sample.styleName}
-              </span>
-              <p className="text-sm text-white/90 leading-snug line-clamp-2">
-                {sample.prompt}
-              </p>
+          {/* Bottom bar - fixed positioning for mobile */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent px-4 py-4 sm:px-6 sm:py-5">
+            <div className="flex items-end justify-between gap-3 max-w-2xl mx-auto">
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/20 text-white/90 backdrop-blur-sm mb-1.5">
+                  {sample.styleName}
+                </span>
+                <p className="text-sm text-white/90 leading-snug line-clamp-2">
+                  {sample.prompt}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onCreateSimilar?.(sample.styleId, sample.styleName);
+                }}
+                className="shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
+              >
+                Create similar
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onCreateSimilar?.(sample.styleId, sample.styleName);
-              }}
-              className="shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
-            >
-              Create similar
-            </button>
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
@@ -138,13 +141,15 @@ function Lightbox({
   );
 }
 
+const SAMPLES_TO_SHOW = 20;
+
 export function ShowcaseGrid({
   onCreateSimilar,
 }: {
   onCreateSimilar?: (styleId: string, styleName: string) => void;
 }) {
-  const [samples, setSamples] = useState(showcaseSamples);
-  useEffect(() => { setSamples(shuffle(showcaseSamples)); }, []);
+  const [samples, setSamples] = useState<ShowcaseSample[]>([]);
+  useEffect(() => { setSamples(shuffle(showcaseSamples).slice(0, SAMPLES_TO_SHOW)); }, []);
   const [selectedSample, setSelectedSample] = useState<ShowcaseSample | null>(null);
 
   return (
