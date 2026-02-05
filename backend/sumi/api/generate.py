@@ -1,8 +1,10 @@
 import asyncio
+from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
+from sumi.api.auth import User, get_current_user, get_optional_user
 from sumi.api.schemas import (
     GenerateRequest,
     GenerateResponse,
@@ -27,8 +29,9 @@ router = APIRouter(prefix="/api", tags=["generation"])
 @router.post("/generate", response_model=GenerateResponse)
 async def create_generation(
     request: GenerateRequest,
-    x_user_id: str | None = Header(None),
+    user: Annotated[User, Depends(get_current_user)],
 ):
+    """Create a new infographic generation job. Requires authentication."""
     job = job_manager.create_job(
         topic=request.topic,
         style_id=request.style_id,
@@ -36,7 +39,7 @@ async def create_generation(
         text_labels=request.text_labels,
         aspect_ratio=request.aspect_ratio,
         language=request.language,
-        user_id=x_user_id,
+        user_id=user.id,
     )
     # Launch pipeline as background task
     asyncio.create_task(run_pipeline(job))
@@ -44,9 +47,17 @@ async def create_generation(
 
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
-async def get_job_status(job_id: str):
+async def get_job_status(
+    job_id: str,
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """Get job status. User can only access their own jobs."""
     job = job_manager.get_job(job_id)
     if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # IDOR protection: users can only access their own jobs
+    if job.user_id and job.user_id != user.id:
         raise HTTPException(status_code=404, detail="Job not found")
 
     is_restyle = job.source_job_id is not None
@@ -91,10 +102,20 @@ async def get_job_status(job_id: str):
 
 
 @router.post("/jobs/{job_id}/confirm")
-async def confirm_selection(job_id: str, request: ConfirmSelectionRequest):
+async def confirm_selection(
+    job_id: str,
+    request: ConfirmSelectionRequest,
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """Confirm style/layout selection. User can only confirm their own jobs."""
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    # IDOR protection
+    if job.user_id and job.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Job not found")
+
     if job.status != JobStatus.AWAITING_SELECTION:
         raise HTTPException(status_code=400, detail="Job is not awaiting selection")
 
@@ -109,11 +130,17 @@ async def confirm_selection(job_id: str, request: ConfirmSelectionRequest):
 async def restyle_job(
     job_id: str,
     request: RestyleRequest,
-    x_user_id: str | None = Header(None),
+    user: Annotated[User, Depends(get_current_user)],
 ):
+    """Restyle an existing job. User can only restyle their own jobs."""
     source_job = job_manager.get_job(job_id)
     if not source_job:
         raise HTTPException(status_code=404, detail="Source job not found")
+
+    # IDOR protection
+    if source_job.user_id and source_job.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Source job not found")
+
     if source_job.status != JobStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Source job is not completed")
 
@@ -129,9 +156,17 @@ async def restyle_job(
 
 
 @router.get("/jobs/{job_id}/stream")
-async def stream_job(job_id: str):
+async def stream_job(
+    job_id: str,
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """Stream job status updates. User can only stream their own jobs."""
     job = job_manager.get_job(job_id)
     if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # IDOR protection
+    if job.user_id and job.user_id != user.id:
         raise HTTPException(status_code=404, detail="Job not found")
 
     return EventSourceResponse(job_manager.sse_generator(job_id))

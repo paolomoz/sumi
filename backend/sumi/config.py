@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Limits
     max_concurrent_jobs: int = 5
 
+    # Auth (shared with NextAuth frontend)
+    auth_secret: str = ""
+
     # GitHub Integration
     github_token: str = ""
     github_repo_owner: str = ""

@@ -16,6 +16,7 @@ dependencies = [
     "python-multipart>=0.0.12",
     "pypdf>=4.0.0",
     "aiosqlite>=0.20.0",
+    "python-jose[cryptography]>=3.3.0",
 ]
 
 [project.optional-dependencies]

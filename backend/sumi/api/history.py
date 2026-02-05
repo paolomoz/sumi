@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Header, HTTPException, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
+from sumi.api.auth import User, get_current_user
 from sumi.db import get_db
 
 router = APIRouter(prefix="/api", tags=["history"])
@@ -24,13 +27,11 @@ class HistoryResponse(BaseModel):
 
 @router.get("/history", response_model=HistoryResponse)
 async def get_history(
-    x_user_id: str | None = Header(None),
+    user: Annotated[User, Depends(get_current_user)],
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
+    """Get generation history for the authenticated user."""
     db = get_db()
     cursor = await db.execute(
         """SELECT id, topic, style_id, style_name, layout_id, layout_name,
@@ -39,7 +40,7 @@ async def get_history(
            WHERE user_id = ?
            ORDER BY created_at DESC
            LIMIT ? OFFSET ?""",
-        (x_user_id, limit, offset),
+        (user.id, limit, offset),
     )
     rows = await cursor.fetchall()
     generations = [

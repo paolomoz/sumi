@@ -2,9 +2,12 @@
 
 import logging
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
+
+from sumi.api.auth import User, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +82,14 @@ def _extract_pdf(content: bytes, filename: str) -> str:
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_files(files: list[UploadFile]):
+async def upload_files(
+    files: list[UploadFile],
+    user: Annotated[User, Depends(get_current_user)],
+):
     """Upload one or more files and extract their text content.
 
-    Supports .md, .txt, and .pdf files. Multiple files are concatenated
-    with clear section markers.
+    Requires authentication. Supports .md, .txt, and .pdf files.
+    Multiple files are concatenated with clear section markers.
     """
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
