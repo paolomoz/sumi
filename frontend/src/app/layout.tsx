@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Albert_Sans } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MainContent } from "@/components/layout/main-content";
 
-const inter = Inter({
+const albertSans = Albert_Sans({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
@@ -47,7 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${albertSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <div className="flex h-screen">
             <Sidebar />
