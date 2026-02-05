@@ -4,8 +4,8 @@ import { BACKEND_URL, backendHeaders } from "@/app/api/_helpers";
 export async function GET() {
   const headers = await backendHeaders();
 
-  // No user ID means not logged in — return empty list instead of proxying a 401
-  if (!headers["X-User-ID"]) {
+  // No session token means not logged in — return empty list instead of 401
+  if (!headers["X-Session-Token"]) {
     return NextResponse.json({ generations: [] });
   }
 
