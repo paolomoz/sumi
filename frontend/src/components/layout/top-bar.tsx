@@ -24,7 +24,7 @@ export function TopBar() {
   }, [menuOpen]);
 
   return (
-    <header className="flex items-center gap-3 border-b border-border bg-card/80 backdrop-blur-sm px-4 py-3">
+    <header className="flex items-center gap-3 px-4 py-3 lg:absolute lg:top-0 lg:right-0 lg:left-auto lg:z-10">
       {/* Mobile hamburger */}
       <button
         onClick={toggleSidebar}
@@ -39,8 +39,8 @@ export function TopBar() {
       {/* Logo - mobile only (desktop has sidebar) */}
       <span className="font-semibold lg:hidden">Sumi</span>
 
-      {/* Spacer */}
-      <div className="flex-1" />
+      {/* Spacer - mobile only */}
+      <div className="flex-1 lg:hidden" />
 
       {/* Auth section */}
       {status === "loading" ? (
