@@ -25,24 +25,38 @@ export interface FeedbackSSEEvent {
 }
 
 export async function submitFeedback(content: string): Promise<FeedbackSubmitResponse> {
-  const response = await fetch(`${API_BASE}/feedback`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: response.statusText }));
-    let message = "Failed to submit feedback";
-    if (typeof error.detail === "string") {
-      message = error.detail;
-    } else if (Array.isArray(error.detail)) {
-      message = error.detail.map((e: { msg: string }) => e.msg).join("; ");
+  try {
+    const response = await fetch(`${API_BASE}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: response.statusText }));
+      let message = "Failed to submit feedback";
+      if (typeof error.detail === "string") {
+        message = error.detail;
+      } else if (Array.isArray(error.detail)) {
+        message = error.detail.map((e: { msg: string }) => e.msg).join("; ");
+      }
+      throw new Error(message);
     }
-    throw new Error(message);
-  }
 
-  return response.json();
+    return response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out. The server may be busy - please try again.");
+    }
+    throw err;
+  }
 }
 
 export async function getFeedbackStatus(feedbackId: string): Promise<FeedbackStatus> {
