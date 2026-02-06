@@ -44,5 +44,8 @@ class Settings(BaseSettings):
     feedback_rate_limit_per_hour: int = 5
     feedback_max_files_per_pr: int = 5
 
+    # Monitor dashboard
+    monitor_secret: str = ""
+
 
 settings = Settings()
