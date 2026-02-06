@@ -74,7 +74,7 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
     <aside className="hidden lg:flex flex-1 min-w-0 min-h-0 flex-col border-l border-border bg-card/50">
       {/* Header */}
       <div className="border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-4">
           <div>
             <h3 className="text-sm font-medium">
               {isCompleted ? "Result" : "Preview"}
