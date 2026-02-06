@@ -254,9 +254,9 @@ export function ChatColumn({
         );
       } else if (step === "recommending") {
         // After selection is done, show the selected style as a compact card
-        // Use result if available (completed), then selection step data, then fall back to best_match rec
-        const selStyleId = result?.style_id ?? stepData.selection?.style_id ?? stepData.recommending?.recommendations?.[0]?.style_id;
-        const selStyleName = result?.style_name ?? stepData.selection?.style_name ?? stepData.recommending?.recommendations?.[0]?.style_name;
+        // Only show when user explicitly selected (via result or selection step data) — never fall back to recommendation
+        const selStyleId = result?.style_id ?? stepData.selection?.style_id;
+        const selStyleName = result?.style_name ?? stepData.selection?.style_name;
         if (selStyleId && selStyleName) {
           elements.push(
             <StyleSelectedMessage

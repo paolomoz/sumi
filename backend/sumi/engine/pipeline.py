@@ -88,46 +88,42 @@ async def run_pipeline(job: Job):
         })
 
         # --- Selection pause logic ---
-        # If user already provided both style_id and layout_id, skip pause
-        if job.style_id and job.layout_id:
-            selected_layout_id = job.layout_id
-            selected_style_id = job.style_id
-        elif job.style_id:
-            # Style pre-selected (e.g. "Create Similar") — pick best layout, skip pause
-            selected_style_id = job.style_id
+        # Always require explicit user confirmation of style selection.
+        # Pre-selected style (e.g. "Create Similar") is used as the default hint
+        # but the pipeline still pauses for the user to confirm.
+        if job.style_id:
+            default_style_id = job.style_id
             # Find a recommended layout that pairs with this style, or fall back
-            selected_layout_id = "bento-grid"
+            default_layout_id = "bento-grid"
             if recommendations:
                 for rec in recommendations:
                     if rec.get("style_id") == job.style_id:
-                        selected_layout_id = rec["layout_id"]
+                        default_layout_id = rec["layout_id"]
                         break
                 else:
-                    selected_layout_id = recommendations[0]["layout_id"]
+                    default_layout_id = recommendations[0]["layout_id"]
+        elif recommendations:
+            default_layout_id = recommendations[0]["layout_id"]
+            default_style_id = recommendations[0]["style_id"]
         else:
-            # Auto-select best_match as default
-            if recommendations:
-                default_layout_id = recommendations[0]["layout_id"]
-                default_style_id = recommendations[0]["style_id"]
-            else:
-                default_layout_id = "bento-grid"
-                default_style_id = "craft-handmade"
+            default_layout_id = "bento-grid"
+            default_style_id = "craft-handmade"
 
-            # Store defaults on job
-            job.confirmed_layout_id = default_layout_id
-            job.confirmed_style_id = default_style_id
+        # Store defaults on job (user can override when confirming)
+        job.confirmed_layout_id = default_layout_id
+        job.confirmed_style_id = default_style_id
 
-            # Pause: set status to AWAITING_SELECTION and wait for user selection (no timeout)
-            job.selection_event = asyncio.Event()
-            await job_manager.update_status(job.id, JobStatus.AWAITING_SELECTION)
+        # Pause: set status to AWAITING_SELECTION and wait for user selection (no timeout)
+        job.selection_event = asyncio.Event()
+        await job_manager.update_status(job.id, JobStatus.AWAITING_SELECTION)
 
-            await job.selection_event.wait()
-            logger.info("Job %s: user confirmed selection", job.id)
+        await job.selection_event.wait()
+        logger.info("Job %s: user confirmed selection", job.id)
 
-            # Use whatever was confirmed (user override or default)
-            selected_layout_id = job.confirmed_layout_id
-            selected_style_id = job.confirmed_style_id
-            job.selection_event = None
+        # Use whatever was confirmed (user override or default)
+        selected_layout_id = job.confirmed_layout_id
+        selected_style_id = job.confirmed_style_id
+        job.selection_event = None
 
         job.layout_id = selected_layout_id
         job.style_id = selected_style_id
@@ -188,8 +184,24 @@ async def run_pipeline(job: Job):
         await _save_generation(job)
 
     except Exception as e:
-        await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))
+        error_msg = _extract_error_message(e)
+        await job_manager.update_status(job.id, JobStatus.FAILED, error=error_msg)
         raise
+
+
+def _extract_error_message(exc: Exception) -> str:
+    """Unwrap RetryError and other wrappers to get a human-readable message."""
+    from tenacity import RetryError
+
+    if isinstance(exc, RetryError):
+        # Extract the last attempt's underlying exception
+        last = exc.last_attempt
+        if last and last.failed:
+            cause = last.exception()
+            if cause:
+                return f"Generation failed after retries: {cause}"
+        return "Generation failed after multiple retries"
+    return str(exc)
 
 
 async def run_restyle_pipeline(job: Job):
@@ -251,5 +263,6 @@ async def run_restyle_pipeline(job: Job):
         await _save_generation(job)
 
     except Exception as e:
-        await job_manager.update_status(job.id, JobStatus.FAILED, error=str(e))
+        error_msg = _extract_error_message(e)
+        await job_manager.update_status(job.id, JobStatus.FAILED, error=error_msg)
         raise

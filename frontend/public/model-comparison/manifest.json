@@ -1,0 +1,52 @@
+[
+  {
+    "id": 0,
+    "prompt": "How CRISPR Gene Editing Works",
+    "style": "Art Nouveau",
+    "original": "/samples/0.jpg",
+    "models": {
+      "recraft-v3": "/model-comparison/0_recraft-v3.jpg",
+      "flux2": "/model-comparison/0_flux2.jpg"
+    }
+  },
+  {
+    "id": 9,
+    "prompt": "The Science of Sleep",
+    "style": "Ukiyo-e",
+    "original": "/samples/9.jpg",
+    "models": {
+      "recraft-v3": "/model-comparison/9_recraft-v3.jpg",
+      "flux2": "/model-comparison/9_flux2.jpg"
+    }
+  },
+  {
+    "id": 10,
+    "prompt": "Agile vs Waterfall: Project Management Compared",
+    "style": "IKEA Manual",
+    "original": "/samples/10.jpg",
+    "models": {
+      "recraft-v3": "/model-comparison/10_recraft-v3.jpg",
+      "flux2": "/model-comparison/10_flux2.jpg"
+    }
+  },
+  {
+    "id": 50,
+    "prompt": "The Migration of Birds",
+    "style": "Charley Harper",
+    "original": "/samples/50.jpg",
+    "models": {
+      "recraft-v3": "/model-comparison/50_recraft-v3.jpg",
+      "flux2": "/model-comparison/50_flux2.jpg"
+    }
+  },
+  {
+    "id": 48,
+    "prompt": "The Origin of Superheroes",
+    "style": "Golden Age Comics",
+    "original": "/samples/48.jpg",
+    "models": {
+      "recraft-v3": "/model-comparison/48_recraft-v3.jpg",
+      "flux2": "/model-comparison/48_flux2.jpg"
+    }
+  }
+]

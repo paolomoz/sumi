@@ -75,6 +75,7 @@ export function Sidebar() {
             </div>
             <div className="space-y-0.5">
               <SidebarLink icon="grid" label="All Generations" active={pathname === "/"} onClick={() => navigate("/")} />
+              <SidebarLink icon="palette" label="Style Gallery" active={pathname === "/gallery"} onClick={() => navigate("/gallery")} />
             </div>
 
             <GenerationHistory />
