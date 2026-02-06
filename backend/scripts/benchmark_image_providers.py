@@ -1,19 +1,17 @@
-"""Pipeline Phase Benchmark: runs the full pipeline for before/after comparison.
+"""Image Provider Benchmark: Gemini 3 vs Recraft V3.
 
-Runs 3 fixed topics through the full pipeline (excluding user selection),
-saves images + timings, and generates a manifest.json for the comparison page.
+Runs 3 fixed topics through the Cerebras/fast LLM pipeline once, then
+generates the image twice — once with Gemini 3 and once with Recraft V3.
+Same prompt, different image generators.
+
+Pass --recraft-only to skip the LLM pipeline and Gemini, re-using existing
+prompts and Gemini results from a previous run.
 
 Usage:
-    cd backend && .venv/bin/python -m scripts.benchmark_pipeline_phase \
-        --phase phase-1 --label "Remove Recommendations" --tag before
-
-    # ... implement changes ...
-
-    cd backend && .venv/bin/python -m scripts.benchmark_pipeline_phase \
-        --phase phase-1 --label "Remove Recommendations" --tag after
+    cd backend && .venv/bin/python -m scripts.benchmark_image_providers
+    cd backend && .venv/bin/python -m scripts.benchmark_image_providers --recraft-only
 """
 
-import argparse
 import asyncio
 import json
 import os
@@ -25,12 +23,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sumi.config import settings
-from sumi.engine.content_synthesizer import synthesize_if_needed
-from sumi.engine.content_analyzer import analyze_content
-from sumi.engine.content_structurer import generate_structured_content
-from sumi.engine.prompt_crafter import craft_prompt
-from sumi.engine.image_generator import generate_image
-from sumi.references.loader import get_references
 
 # ---------------------------------------------------------------------------
 # Load .env
@@ -43,8 +35,31 @@ if _env_path.exists():
             _k, _, _v = _line.partition("=")
             os.environ.setdefault(_k.strip(), _v.strip())
 
+# Map FAL_API_KEY -> FAL_KEY (fal_client expects FAL_KEY)
+if not os.environ.get("FAL_KEY"):
+    _fal_key = settings.fal_api_key or os.environ.get("FAL_API_KEY", "")
+    if _fal_key:
+        os.environ["FAL_KEY"] = _fal_key
+
 # ---------------------------------------------------------------------------
-# Test topics (same as benchmark_llm_providers.py)
+# Imports AFTER .env is loaded (so API keys are available)
+# ---------------------------------------------------------------------------
+import fal_client
+from sumi.llm.client import cerebras_chat
+import sumi.engine.content_analyzer as analyzer_mod
+import sumi.engine.content_structurer as structurer_mod
+import sumi.engine.content_synthesizer as synthesizer_mod
+import sumi.engine.prompt_crafter as crafter_mod
+
+from sumi.engine.content_synthesizer import synthesize_if_needed
+from sumi.engine.content_analyzer import analyze_content
+from sumi.engine.content_structurer import generate_structured_content
+from sumi.engine.prompt_crafter import craft_prompt
+from sumi.engine.image_generator import generate_image
+from sumi.references.loader import get_references
+
+# ---------------------------------------------------------------------------
+# Test topics (same as other benchmarks)
 # ---------------------------------------------------------------------------
 
 TOPIC_SHORT = "How coffee is made — from bean to cup"
@@ -306,161 +321,294 @@ FIXED_LAYOUT_ID = "hub-spoke"
 FIXED_STYLE_ID = "ukiyo-e"
 
 
-async def run_pipeline_for_topic(topic_key: str, topic_text: str, output_dir: Path) -> dict:
-    """Run the full pipeline for one topic, return timings and image path."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    timings: dict[str, float] = {}
+# ---------------------------------------------------------------------------
+# Cerebras wrapper that handles list-based system prompts
+# ---------------------------------------------------------------------------
 
-    print(f"  [{topic_key}] Pre-synthesis...")
-    t0 = time.monotonic()
+async def _cerebras_chat_compat(
+    system: "str | list[dict]",
+    user_message: str,
+    *,
+    model: str | None = None,
+    max_tokens: int = 4096,
+    temperature: float = 0.7,
+) -> str:
+    """Wrapper around cerebras_chat that flattens list-based system prompts."""
+    if isinstance(system, list):
+        system = "\n\n".join(block["text"] for block in system if "text" in block)
+    return await cerebras_chat(
+        system=system,
+        user_message=user_message,
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+
+
+def _patch_cerebras():
+    """Monkey-patch all engine modules to use Cerebras."""
+    analyzer_mod.chat = _cerebras_chat_compat
+    structurer_mod.chat = _cerebras_chat_compat
+    synthesizer_mod.chat = _cerebras_chat_compat
+    crafter_mod.chat = _cerebras_chat_compat
+    print("  Patched all LLM calls -> Cerebras (fast mode)")
+
+
+# ---------------------------------------------------------------------------
+# Recraft V3 image generation
+# ---------------------------------------------------------------------------
+
+async def generate_recraft_image(prompt: str, output_path: str) -> str:
+    """Generate an image with Recraft V3 via fal.ai and save to disk."""
+    import httpx
+
+    # Recraft V3 has a 1000-char prompt limit
+    truncated_prompt = prompt[:1000] if len(prompt) > 1000 else prompt
+
+    result = await fal_client.subscribe_async(
+        "fal-ai/recraft/v3/text-to-image",
+        arguments={
+            "prompt": truncated_prompt,
+            "image_size": "landscape_16_9",
+            "style": "digital_illustration",
+        },
+    )
+
+    image_url = result["images"][0]["url"]
+
+    # Download image bytes
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(image_url)
+        resp.raise_for_status()
+        image_bytes = resp.content
+
+    # Determine extension from content-type
+    content_type = resp.headers.get("content-type", "image/jpeg")
+    if "png" in content_type:
+        ext = ".png"
+    elif "webp" in content_type:
+        ext = ".webp"
+    else:
+        ext = ".jpg"
+
+    # Adjust output path extension
+    out = Path(output_path).with_suffix(ext)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(image_bytes)
+
+    return str(out)
+
+
+# ---------------------------------------------------------------------------
+# Per-topic pipeline
+# ---------------------------------------------------------------------------
+
+async def run_topic(topic_key: str, topic_text: str, base_dir: Path) -> dict:
+    """Run LLM pipeline once, then generate image with both providers."""
+    topic_dir = base_dir / topic_key
+    topic_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- LLM pipeline (once) ---
+    print(f"  [{topic_key}] LLM pipeline starting...")
+    llm_start = time.monotonic()
+
+    print(f"  [{topic_key}]   Pre-synthesis...")
     topic = await synthesize_if_needed(topic_text)
-    timings["pre_synthesis"] = round(time.monotonic() - t0, 2)
 
-    print(f"  [{topic_key}] Analyzing...")
-    t0 = time.monotonic()
+    print(f"  [{topic_key}]   Analyzing...")
     analysis = await analyze_content(topic)
-    timings["analysis"] = round(time.monotonic() - t0, 2)
 
-    # Save analysis
-    analysis_md = analysis.get("analysis_markdown", "")
-    (output_dir / "analysis.md").write_text(analysis_md, encoding="utf-8")
-
-    print(f"  [{topic_key}] Structuring...")
-    t0 = time.monotonic()
+    print(f"  [{topic_key}]   Structuring...")
     structured = await generate_structured_content(topic, analysis)
-    timings["structuring"] = round(time.monotonic() - t0, 2)
 
-    # Save structured content
-    (output_dir / "structured_content.md").write_text(structured, encoding="utf-8")
-
-    print(f"  [{topic_key}] Crafting prompt...")
-    t0 = time.monotonic()
-    analysis_md_str = analysis.get("analysis_markdown", "") if isinstance(analysis, dict) else str(analysis)
+    print(f"  [{topic_key}]   Crafting prompt...")
+    analysis_md = analysis.get("analysis_markdown", "") if isinstance(analysis, dict) else str(analysis)
     prompt = await craft_prompt(
         layout_id=FIXED_LAYOUT_ID,
         style_id=FIXED_STYLE_ID,
         structured_content=structured,
         topic=topic,
-        analysis=analysis_md_str,
+        analysis=analysis_md,
         aspect_ratio="16:9",
         language="English",
     )
-    timings["crafting"] = round(time.monotonic() - t0, 2)
+
+    llm_time = round(time.monotonic() - llm_start, 2)
+    print(f"  [{topic_key}] LLM pipeline done in {llm_time:.1f}s")
 
     # Save prompt
-    (output_dir / "prompt.md").write_text(prompt, encoding="utf-8")
+    (topic_dir / "prompt.md").write_text(prompt, encoding="utf-8")
 
-    print(f"  [{topic_key}] Generating image...")
-    t0 = time.monotonic()
-    image_path = str(output_dir / "infographic.png")
-    actual_path = await generate_image(
+    # --- Gemini image ---
+    print(f"  [{topic_key}] Generating image with Gemini 3...")
+    gemini_dir = topic_dir / "gemini"
+    gemini_dir.mkdir(parents=True, exist_ok=True)
+    gemini_start = time.monotonic()
+    gemini_path = await generate_image(
         prompt=prompt,
-        output_path=image_path,
+        output_path=str(gemini_dir / "infographic.png"),
         aspect_ratio="16:9",
     )
-    timings["image_generation"] = round(time.monotonic() - t0, 2)
+    gemini_time = round(time.monotonic() - gemini_start, 2)
+    print(f"  [{topic_key}] Gemini done in {gemini_time:.1f}s")
 
-    total = round(sum(timings.values()), 2)
-    timings["total"] = total
-    print(f"  [{topic_key}] Done in {total:.1f}s")
-
-    # Save timings
-    (output_dir / "timings.json").write_text(json.dumps(timings, indent=2), encoding="utf-8")
+    # --- Recraft image ---
+    print(f"  [{topic_key}] Generating image with Recraft V3...")
+    recraft_dir = topic_dir / "recraft"
+    recraft_dir.mkdir(parents=True, exist_ok=True)
+    recraft_start = time.monotonic()
+    recraft_path = await generate_recraft_image(
+        prompt=prompt,
+        output_path=str(recraft_dir / "infographic.jpg"),
+    )
+    recraft_time = round(time.monotonic() - recraft_start, 2)
+    print(f"  [{topic_key}] Recraft done in {recraft_time:.1f}s")
 
     return {
-        "timings": timings,
-        "total_time": total,
-        "image": str(Path(actual_path).relative_to(Path(settings.output_dir).parent)),
+        "llm_time": llm_time,
+        "gemini_time": gemini_time,
+        "gemini_filename": Path(gemini_path).name,
+        "recraft_time": recraft_time,
+        "recraft_filename": Path(recraft_path).name,
     }
 
 
+async def run_recraft_only(topic_key: str, base_dir: Path) -> dict:
+    """Re-generate only the Recraft image using an existing prompt."""
+    topic_dir = base_dir / topic_key
+    prompt_path = topic_dir / "prompt.md"
+    if not prompt_path.exists():
+        raise FileNotFoundError(f"No existing prompt at {prompt_path} — run full pipeline first")
+    prompt = prompt_path.read_text(encoding="utf-8")
+
+    print(f"  [{topic_key}] Generating image with Recraft V3...")
+    recraft_dir = topic_dir / "recraft"
+    recraft_dir.mkdir(parents=True, exist_ok=True)
+    recraft_start = time.monotonic()
+    recraft_path = await generate_recraft_image(
+        prompt=prompt,
+        output_path=str(recraft_dir / "infographic.jpg"),
+    )
+    recraft_time = round(time.monotonic() - recraft_start, 2)
+    print(f"  [{topic_key}] Recraft done in {recraft_time:.1f}s")
+
+    return {
+        "recraft_time": recraft_time,
+        "recraft_filename": Path(recraft_path).name,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 async def main():
-    parser = argparse.ArgumentParser(description="Pipeline phase benchmark")
-    parser.add_argument("--phase", required=True, help="Phase identifier (e.g., phase-1)")
-    parser.add_argument("--label", required=True, help="Human-readable phase label")
-    parser.add_argument("--tag", required=True, choices=["before", "after"], help="before or after")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Image provider benchmark")
+    parser.add_argument(
+        "--recraft-only",
+        action="store_true",
+        help="Only regenerate Recraft images using existing prompts & Gemini results",
+    )
     args = parser.parse_args()
 
-    base_dir = Path(settings.output_dir) / "pipeline-comparison" / args.phase / args.tag
+    base_dir = Path(settings.output_dir) / "image-comparison"
     base_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = base_dir / "manifest.json"
 
-    print(f"\n{'='*60}")
-    print(f"Pipeline Phase Benchmark: {args.label}")
-    print(f"Phase: {args.phase} | Tag: {args.tag}")
-    print(f"Output: {base_dir}")
-    print(f"Fixed selection: layout={FIXED_LAYOUT_ID}, style={FIXED_STYLE_ID}")
-    print(f"{'='*60}\n")
+    if args.recraft_only:
+        # ------------------------------------------------------------------
+        # Recraft-only mode: reuse existing prompts & Gemini data
+        # ------------------------------------------------------------------
+        if not manifest_path.exists():
+            print("ERROR: No existing manifest.json — run full pipeline first")
+            sys.exit(1)
 
-    results = {}
-    for topic_key, topic_info in TOPICS.items():
-        print(f"\n--- {topic_info['name']} ---")
-        topic_dir = base_dir / topic_key
-        result = await run_pipeline_for_topic(topic_key, topic_info["topic"], topic_dir)
-        results[topic_key] = result
+        old_manifest = json.loads(manifest_path.read_text())
+        old_by_name = {t["name"]: t for t in old_manifest["topics"]}
 
-    # Generate/update manifest
-    manifest_path = Path(settings.output_dir) / "pipeline-comparison" / "manifest.json"
-    if manifest_path.exists():
-        manifest = json.loads(manifest_path.read_text())
+        print(f"\n{'='*60}")
+        print("Image Provider Benchmark: Recraft V3 only (reusing prompts)")
+        print(f"Output: {base_dir}")
+        print(f"{'='*60}\n")
+
+        manifest = {"topics": []}
+        for topic_key, topic_info in TOPICS.items():
+            print(f"\n--- {topic_info['name']} ---")
+            r = await run_recraft_only(topic_key, base_dir)
+            old = old_by_name.get(topic_info["name"], {})
+            manifest["topics"].append({
+                "name": topic_info["name"],
+                "llm_time": old.get("llm_time", 0),
+                "gemini": old.get("gemini", {"image": "", "time": 0}),
+                "recraft": {
+                    "image": f"/output/image-comparison/{topic_key}/recraft/{r['recraft_filename']}",
+                    "time": r["recraft_time"],
+                },
+            })
+
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        print(f"\nManifest updated: {manifest_path}")
+
+        print(f"\n{'='*60}")
+        print("TIMING SUMMARY")
+        print(f"{'='*60}")
+        for t in manifest["topics"]:
+            gemini_t = t["gemini"]["time"]
+            recraft_t = t["recraft"]["time"]
+            print(f"\n  {t['name']}:")
+            print(f"    LLM pipeline:     {t['llm_time']:6.1f}s (previous run)")
+            print(f"    Gemini image:     {gemini_t:6.1f}s (previous run)")
+            print(f"    Recraft image:    {recraft_t:6.1f}s")
+
     else:
-        manifest = []
+        # ------------------------------------------------------------------
+        # Full mode: LLM pipeline + both image providers
+        # ------------------------------------------------------------------
+        print(f"\n{'='*60}")
+        print("Image Provider Benchmark: Gemini 3 vs Recraft V3")
+        print(f"Output: {base_dir}")
+        print(f"LLM: Cerebras (fast mode)")
+        print(f"Fixed: layout={FIXED_LAYOUT_ID}, style={FIXED_STYLE_ID}")
+        print(f"{'='*60}\n")
 
-    # Find or create phase entry
-    phase_entry = None
-    for entry in manifest:
-        if entry["phase"] == args.phase:
-            phase_entry = entry
-            break
+        _patch_cerebras()
 
-    if phase_entry is None:
-        phase_entry = {
-            "phase": args.phase,
-            "label": args.label,
-            "topics": [],
-        }
-        manifest.append(phase_entry)
-    else:
-        phase_entry["label"] = args.label
+        results = {}
+        for topic_key, topic_info in TOPICS.items():
+            print(f"\n--- {topic_info['name']} ---")
+            result = await run_topic(topic_key, topic_info["topic"], base_dir)
+            results[topic_key] = result
 
-    # Update topics in phase entry
-    for topic_key, topic_info in TOPICS.items():
-        result = results[topic_key]
-        # Find existing topic or create new
-        existing = None
-        for t in phase_entry["topics"]:
-            if t["name"] == topic_info["name"]:
-                existing = t
-                break
+        manifest = {"topics": []}
+        for topic_key, topic_info in TOPICS.items():
+            r = results[topic_key]
+            manifest["topics"].append({
+                "name": topic_info["name"],
+                "llm_time": r["llm_time"],
+                "gemini": {
+                    "image": f"/output/image-comparison/{topic_key}/gemini/{r['gemini_filename']}",
+                    "time": r["gemini_time"],
+                },
+                "recraft": {
+                    "image": f"/output/image-comparison/{topic_key}/recraft/{r['recraft_filename']}",
+                    "time": r["recraft_time"],
+                },
+            })
 
-        # Use the actual image filename (extension may be .jpg or .png depending on generator)
-        image_filename = Path(result["image"]).name if "image" in result else "infographic.png"
-        tag_data = {
-            "image": f"/output/pipeline-comparison/{args.phase}/{args.tag}/{topic_key}/{image_filename}",
-            "timings": result["timings"],
-            "total_time": result["total_time"],
-        }
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        print(f"\nManifest written: {manifest_path}")
 
-        if existing:
-            existing[args.tag] = tag_data
-        else:
-            new_topic = {"name": topic_info["name"]}
-            new_topic[args.tag] = tag_data
-            phase_entry["topics"].append(new_topic)
-
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    print(f"\nManifest updated: {manifest_path}")
-
-    # Print summary
-    print(f"\n{'='*60}")
-    print("TIMING SUMMARY")
-    print(f"{'='*60}")
-    for topic_key, topic_info in TOPICS.items():
-        r = results[topic_key]
-        print(f"\n  {topic_info['name']}:")
-        for step, t in r["timings"].items():
-            if step != "total":
-                print(f"    {step:20s}: {t:6.1f}s")
-        print(f"    {'total':20s}: {r['total_time']:6.1f}s")
+        print(f"\n{'='*60}")
+        print("TIMING SUMMARY")
+        print(f"{'='*60}")
+        for topic_key, topic_info in TOPICS.items():
+            r = results[topic_key]
+            print(f"\n  {topic_info['name']}:")
+            print(f"    LLM pipeline:     {r['llm_time']:6.1f}s")
+            print(f"    Gemini image:     {r['gemini_time']:6.1f}s")
+            print(f"    Recraft image:    {r['recraft_time']:6.1f}s")
 
 
 if __name__ == "__main__":

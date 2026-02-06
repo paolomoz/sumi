@@ -1,16 +1,12 @@
-"""Pipeline Phase Benchmark: runs the full pipeline for before/after comparison.
+"""Model Quality Benchmark: full Opus vs full Cerebras pipeline comparison.
 
-Runs 3 fixed topics through the full pipeline (excluding user selection),
-saves images + timings, and generates a manifest.json for the comparison page.
+Runs 3 fixed topics through the entire pipeline using either Claude Opus or
+Cerebras GPT-OSS for ALL LLM steps (analysis, structuring, crafting, and
+pre-synthesis for long docs). Image generation always uses Gemini.
 
 Usage:
-    cd backend && .venv/bin/python -m scripts.benchmark_pipeline_phase \
-        --phase phase-1 --label "Remove Recommendations" --tag before
-
-    # ... implement changes ...
-
-    cd backend && .venv/bin/python -m scripts.benchmark_pipeline_phase \
-        --phase phase-1 --label "Remove Recommendations" --tag after
+    cd backend && .venv/bin/python -m scripts.benchmark_model_quality --provider opus
+    cd backend && .venv/bin/python -m scripts.benchmark_model_quality --provider cerebras
 """
 
 import argparse
@@ -25,12 +21,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sumi.config import settings
-from sumi.engine.content_synthesizer import synthesize_if_needed
-from sumi.engine.content_analyzer import analyze_content
-from sumi.engine.content_structurer import generate_structured_content
-from sumi.engine.prompt_crafter import craft_prompt
-from sumi.engine.image_generator import generate_image
-from sumi.references.loader import get_references
 
 # ---------------------------------------------------------------------------
 # Load .env
@@ -44,7 +34,23 @@ if _env_path.exists():
             os.environ.setdefault(_k.strip(), _v.strip())
 
 # ---------------------------------------------------------------------------
-# Test topics (same as benchmark_llm_providers.py)
+# Imports AFTER .env is loaded (so API keys are available)
+# ---------------------------------------------------------------------------
+from sumi.llm.client import cerebras_chat
+import sumi.engine.content_analyzer as analyzer_mod
+import sumi.engine.content_structurer as structurer_mod
+import sumi.engine.content_synthesizer as synthesizer_mod
+import sumi.engine.prompt_crafter as crafter_mod
+
+from sumi.engine.content_synthesizer import synthesize_if_needed
+from sumi.engine.content_analyzer import analyze_content
+from sumi.engine.content_structurer import generate_structured_content
+from sumi.engine.prompt_crafter import craft_prompt
+from sumi.engine.image_generator import generate_image
+from sumi.references.loader import get_references
+
+# ---------------------------------------------------------------------------
+# Test topics (same as benchmark_pipeline_phase.py)
 # ---------------------------------------------------------------------------
 
 TOPIC_SHORT = "How coffee is made — from bean to cup"
@@ -306,6 +312,49 @@ FIXED_LAYOUT_ID = "hub-spoke"
 FIXED_STYLE_ID = "ukiyo-e"
 
 
+# ---------------------------------------------------------------------------
+# Cerebras wrapper that handles list-based system prompts
+# ---------------------------------------------------------------------------
+
+async def _cerebras_chat_compat(
+    system: "str | list[dict]",
+    user_message: str,
+    *,
+    model: str | None = None,
+    max_tokens: int = 4096,
+    temperature: float = 0.7,
+) -> str:
+    """Wrapper around cerebras_chat that flattens list-based system prompts."""
+    if isinstance(system, list):
+        # Flatten structured blocks (used by prompt caching) into plain text
+        system = "\n\n".join(block["text"] for block in system if "text" in block)
+    return await cerebras_chat(
+        system=system,
+        user_message=user_message,
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+
+
+def _patch_provider(provider: str):
+    """Monkey-patch all engine modules to use the specified provider."""
+    if provider == "cerebras":
+        analyzer_mod.chat = _cerebras_chat_compat
+        structurer_mod.chat = _cerebras_chat_compat
+        synthesizer_mod.chat = _cerebras_chat_compat
+        crafter_mod.chat = _cerebras_chat_compat
+        print("  Patched all LLM calls -> Cerebras GPT-OSS")
+    else:
+        # Opus is the default — reimport to restore original
+        from sumi.llm.client import chat
+        analyzer_mod.chat = chat
+        structurer_mod.chat = chat
+        synthesizer_mod.chat = chat
+        crafter_mod.chat = chat
+        print("  Patched all LLM calls -> Claude Opus")
+
+
 async def run_pipeline_for_topic(topic_key: str, topic_text: str, output_dir: Path) -> dict:
     """Run the full pipeline for one topic, return timings and image path."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -367,29 +416,37 @@ async def run_pipeline_for_topic(topic_key: str, topic_text: str, output_dir: Pa
     # Save timings
     (output_dir / "timings.json").write_text(json.dumps(timings, indent=2), encoding="utf-8")
 
+    # Get actual image filename (may be .jpg not .png)
+    image_filename = Path(actual_path).name
+
     return {
         "timings": timings,
         "total_time": total,
-        "image": str(Path(actual_path).relative_to(Path(settings.output_dir).parent)),
+        "image_filename": image_filename,
     }
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Pipeline phase benchmark")
-    parser.add_argument("--phase", required=True, help="Phase identifier (e.g., phase-1)")
-    parser.add_argument("--label", required=True, help="Human-readable phase label")
-    parser.add_argument("--tag", required=True, choices=["before", "after"], help="before or after")
+    parser = argparse.ArgumentParser(description="Model quality benchmark")
+    parser.add_argument(
+        "--provider",
+        required=True,
+        choices=["opus", "cerebras"],
+        help="LLM provider for ALL pipeline steps",
+    )
     args = parser.parse_args()
 
-    base_dir = Path(settings.output_dir) / "pipeline-comparison" / args.phase / args.tag
+    base_dir = Path(settings.output_dir) / "model-quality" / args.provider
     base_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
-    print(f"Pipeline Phase Benchmark: {args.label}")
-    print(f"Phase: {args.phase} | Tag: {args.tag}")
+    print(f"Model Quality Benchmark: {args.provider.upper()}")
     print(f"Output: {base_dir}")
     print(f"Fixed selection: layout={FIXED_LAYOUT_ID}, style={FIXED_STYLE_ID}")
     print(f"{'='*60}\n")
+
+    # Patch LLM calls to the chosen provider
+    _patch_provider(args.provider)
 
     results = {}
     for topic_key, topic_info in TOPICS.items():
@@ -399,53 +456,35 @@ async def main():
         results[topic_key] = result
 
     # Generate/update manifest
-    manifest_path = Path(settings.output_dir) / "pipeline-comparison" / "manifest.json"
+    manifest_path = Path(settings.output_dir) / "model-quality" / "manifest.json"
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text())
     else:
-        manifest = []
+        manifest = {"topics": []}
 
-    # Find or create phase entry
-    phase_entry = None
-    for entry in manifest:
-        if entry["phase"] == args.phase:
-            phase_entry = entry
-            break
-
-    if phase_entry is None:
-        phase_entry = {
-            "phase": args.phase,
-            "label": args.label,
-            "topics": [],
-        }
-        manifest.append(phase_entry)
-    else:
-        phase_entry["label"] = args.label
-
-    # Update topics in phase entry
+    # Update topics in manifest
     for topic_key, topic_info in TOPICS.items():
         result = results[topic_key]
+
         # Find existing topic or create new
         existing = None
-        for t in phase_entry["topics"]:
+        for t in manifest["topics"]:
             if t["name"] == topic_info["name"]:
                 existing = t
                 break
 
-        # Use the actual image filename (extension may be .jpg or .png depending on generator)
-        image_filename = Path(result["image"]).name if "image" in result else "infographic.png"
-        tag_data = {
-            "image": f"/output/pipeline-comparison/{args.phase}/{args.tag}/{topic_key}/{image_filename}",
+        provider_data = {
+            "image": f"/output/model-quality/{args.provider}/{topic_key}/{result['image_filename']}",
             "timings": result["timings"],
             "total_time": result["total_time"],
         }
 
         if existing:
-            existing[args.tag] = tag_data
+            existing[args.provider] = provider_data
         else:
             new_topic = {"name": topic_info["name"]}
-            new_topic[args.tag] = tag_data
-            phase_entry["topics"].append(new_topic)
+            new_topic[args.provider] = provider_data
+            manifest["topics"].append(new_topic)
 
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"\nManifest updated: {manifest_path}")

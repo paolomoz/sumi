@@ -87,7 +87,7 @@ export default function PipelineComparisonPage() {
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/output/pipeline-comparison/manifest.json")
+    fetch(`/output/pipeline-comparison/manifest.json?_=${Date.now()}`)
       .then((res) => res.json())
       .then((data) => {
         setPhases(data);
