@@ -1,5 +1,7 @@
 "use client";
 
+import { ImageZoom } from "@/components/ui/image-zoom";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { downloadFile } from "@/lib/utils";
