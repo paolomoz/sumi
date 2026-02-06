@@ -54,6 +54,7 @@ class GenerateRequest(BaseModel):
     text_labels: list[str] | None = None
     aspect_ratio: str = "16:9"
     language: str = "English"
+    mode: str = "detailed"
 
 
 class RestyleRequest(BaseModel):
@@ -61,6 +62,7 @@ class RestyleRequest(BaseModel):
     layout_id: str | None = None
     aspect_ratio: str = "16:9"
     language: str = "English"
+    mode: str = "detailed"
 
 
 class GenerateResponse(BaseModel):
@@ -90,6 +92,7 @@ class JobResult(BaseModel):
     style_id: str | None = None
     style_name: str | None = None
     analysis: dict | None = None
+    mode: str | None = None
 
 
 class ConfirmSelectionRequest(BaseModel):

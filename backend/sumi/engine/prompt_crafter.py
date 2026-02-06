@@ -2,7 +2,7 @@
 
 import re
 
-from sumi.llm.client import chat
+from sumi.llm.client import chat_with_mode
 from sumi.references.loader import get_references
 
 
@@ -46,6 +46,7 @@ async def craft_prompt(
     text_labels: list[str] | None = None,
     aspect_ratio: str = "16:9",
     language: str = "English",
+    mode: str = "detailed",
 ) -> str:
     """Build the final image generation prompt using Claude for creative synthesis.
 
@@ -149,9 +150,10 @@ Title, Hub/Center, Section Labels, Section Content, Key Phrases, Attribution.)""
         {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
     ]
 
-    creative_sections = await chat(
+    creative_sections = await chat_with_mode(
         system=system,
         user_message=user_message,
+        mode=mode,
         temperature=0.7,
         max_tokens=8192,
     )

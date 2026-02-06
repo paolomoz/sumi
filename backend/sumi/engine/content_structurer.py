@@ -1,4 +1,4 @@
-from sumi.llm.client import chat
+from sumi.llm.client import chat_with_mode
 from sumi.references.loader import get_references
 
 
@@ -12,7 +12,7 @@ for every section — these will be rendered verbatim in the final infographic.
 Return ONLY the structured content markdown — no wrapping, no extra commentary."""
 
 
-async def generate_structured_content(topic: str, analysis: dict) -> str:
+async def generate_structured_content(topic: str, analysis: dict, mode: str = "detailed") -> str:
     """Transform analysis into designer-ready structured content.
 
     Returns the structured content as a markdown string.
@@ -42,9 +42,10 @@ async def generate_structured_content(topic: str, analysis: dict) -> str:
 Generate the structured content following the template in the system prompt. Include all text labels \
 that should appear in the infographic. Preserve all data points verbatim from the analysis."""
 
-    structured_content = await chat(
+    structured_content = await chat_with_mode(
         system=system,
         user_message=user_message,
+        mode=mode,
         temperature=0.5,
         max_tokens=4096,
     )

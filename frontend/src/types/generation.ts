@@ -5,6 +5,7 @@ export interface GenerateRequest {
   text_labels?: string[];
   aspect_ratio?: string;
   language?: string;
+  mode?: string;
 }
 
 export interface JobProgress {
@@ -20,6 +21,7 @@ export interface JobResult {
   style_id: string | null;
   style_name: string | null;
   analysis: Record<string, unknown> | null;
+  mode?: string | null;
 }
 
 export interface StepDataMap {

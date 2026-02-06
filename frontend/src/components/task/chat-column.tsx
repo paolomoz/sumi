@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStartRestyle } from "@/lib/hooks/use-generation";
+import { useStartGeneration, useStartRestyle } from "@/lib/hooks/use-generation";
 import { useInvalidateHistory } from "@/lib/hooks/use-history";
 import { useStyles } from "@/lib/hooks/use-references";
 import { ActivityCard } from "./activity-card";
@@ -98,6 +98,7 @@ interface ChatColumnProps {
     layout_name: string | null;
     style_id: string | null;
     style_name: string | null;
+    mode?: string | null;
   } | null;
   error: string | null;
 }
@@ -113,6 +114,7 @@ export function ChatColumn({
   error,
 }: ChatColumnProps) {
   const router = useRouter();
+  const startGeneration = useStartGeneration();
   const startRestyle = useStartRestyle();
   const invalidateHistory = useInvalidateHistory();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,23 @@ export function ChatColumn({
 
   const handleNew = () => {
     router.push("/");
+  };
+
+  const handleTryOtherMode = async () => {
+    const currentMode = result?.mode || "detailed";
+    const oppositeMode = currentMode === "detailed" ? "fast" : "detailed";
+    try {
+      const res = await startGeneration.mutateAsync({
+        topic,
+        style_id: result?.style_id ?? undefined,
+        layout_id: result?.layout_id ?? undefined,
+        mode: oppositeMode,
+      });
+      invalidateHistory();
+      router.push(`/task/${res.job_id}`);
+    } catch {
+      // error shown in UI
+    }
   };
 
   // Build elements
@@ -346,6 +365,27 @@ export function ChatColumn({
                     disabled={startRestyle.isPending}
                   >
                     Try Different Style
+                  </Chip>
+                  <Chip
+                    variant="outline"
+                    onClick={handleTryOtherMode}
+                    disabled={startGeneration.isPending}
+                  >
+                    {(result?.mode || "detailed") === "detailed" ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                          <path d="M6.5 1L3 7h3l-.5 4L9 5H6l.5-4z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Try Fast Mode
+                      </>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                          <path d="M6 1l1.1 2.5L10 4l-2 2 .5 3L6 7.5 3.5 9l.5-3-2-2 2.9-.5L6 1z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Try Detailed Mode
+                      </>
+                    )}
                   </Chip>
                   <Chip variant="outline" onClick={handleNew}>
                     New Infographic

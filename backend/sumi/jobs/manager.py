@@ -28,6 +28,7 @@ class JobManager:
         aspect_ratio: str = "16:9",
         language: str = "English",
         user_id: str | None = None,
+        mode: str = "detailed",
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]
         job = Job(
@@ -39,6 +40,7 @@ class JobManager:
             text_labels=text_labels,
             aspect_ratio=aspect_ratio,
             language=language,
+            mode=mode,
         )
         self._jobs[job_id] = job
         return job
@@ -50,6 +52,7 @@ class JobManager:
         layout_id: str | None = None,
         aspect_ratio: str = "16:9",
         language: str = "English",
+        mode: str | None = None,
     ) -> Job:
         job_id = uuid.uuid4().hex[:12]
         job = Job(
@@ -61,6 +64,7 @@ class JobManager:
             text_labels=source_job.text_labels,
             aspect_ratio=aspect_ratio,
             language=language,
+            mode=mode or source_job.mode,
             source_job_id=source_job.id,
             # Pre-populate from source job
             analysis=source_job.analysis,
@@ -180,6 +184,7 @@ class JobManager:
                                 "layout_name": job.layout_name,
                                 "style_id": job.style_id,
                                 "style_name": job.style_name,
+                                "mode": job.mode,
                             }),
                         }
                     break

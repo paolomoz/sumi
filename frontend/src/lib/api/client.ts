@@ -56,7 +56,7 @@ export async function fetchJobStatus(jobId: string): Promise<JobStatus> {
 
 export async function restyleJob(
   jobId: string,
-  request: { style_id: string; layout_id?: string; aspect_ratio?: string; language?: string }
+  request: { style_id: string; layout_id?: string; aspect_ratio?: string; language?: string; mode?: string }
 ): Promise<{ job_id: string }> {
   return fetchJson(`/jobs/${jobId}/restyle`, {
     method: "POST",

@@ -21,6 +21,7 @@ export function useStartRestyle() {
       layout_id?: string;
       aspect_ratio?: string;
       language?: string;
+      mode?: string;
     }) => restyleJob(jobId, request),
   });
 }

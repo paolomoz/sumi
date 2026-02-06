@@ -7,7 +7,7 @@ can work with effectively. Short inputs pass through unchanged.
 
 import logging
 
-from sumi.llm.client import cerebras_chat
+from sumi.llm.client import chat_with_mode
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ Your output must be concise (under 3000 words) and structured as markdown.
 Return ONLY the structured brief — no wrapping, no commentary about the process."""
 
 
-async def synthesize_if_needed(topic: str) -> str:
+async def synthesize_if_needed(topic: str, mode: str = "detailed") -> str:
     """Condense long content into a structured brief.
 
     For topics under SYNTHESIS_THRESHOLD characters, returns the input unchanged.
@@ -72,9 +72,10 @@ Important phrases worth featuring in the infographic, preserved verbatim.
 ### Audience & Tone
 Who this is for and what tone the infographic should strike."""
 
-    brief = await cerebras_chat(
+    brief = await chat_with_mode(
         system=SYSTEM_PROMPT,
         user_message=user_message,
+        mode=mode,
         temperature=0.3,
         max_tokens=4096,
     )

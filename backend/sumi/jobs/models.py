@@ -65,6 +65,7 @@ class Job:
     text_labels: list[str] | None = None
     aspect_ratio: str = "16:9"
     language: str = "English"
+    mode: str = "detailed"
     status: JobStatus = JobStatus.QUEUED
     error: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)

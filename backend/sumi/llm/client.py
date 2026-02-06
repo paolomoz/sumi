@@ -173,6 +173,28 @@ async def chat_json(
 
 
 # ---------------------------------------------------------------------------
+# Mode-aware routing
+# ---------------------------------------------------------------------------
+
+
+async def chat_with_mode(
+    system: str | list[dict],
+    user_message: str,
+    *,
+    mode: str = "detailed",
+    model: str | None = None,
+    max_tokens: int = 4096,
+    temperature: float = 0.7,
+) -> str:
+    """Route to Cerebras (fast) or Claude (detailed) based on mode."""
+    if mode == "fast":
+        if isinstance(system, list):
+            system = "\n\n".join(b["text"] for b in system if "text" in b)
+        return await cerebras_chat(system, user_message, model=model, max_tokens=max_tokens, temperature=temperature)
+    return await chat(system, user_message, model=model, max_tokens=max_tokens, temperature=temperature)
+
+
+# ---------------------------------------------------------------------------
 # Cerebras provider (OpenAI-compatible)
 # ---------------------------------------------------------------------------
 

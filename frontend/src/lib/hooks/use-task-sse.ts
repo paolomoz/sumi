@@ -14,6 +14,7 @@ interface TaskSSEState {
     layout_name: string | null;
     style_id: string | null;
     style_name: string | null;
+    mode?: string | null;
   } | null;
   connected: boolean;
 }

@@ -55,13 +55,13 @@ async def run_pipeline(job: Job):
 
         # Step 0: Pre-synthesize long content
         t0 = time.monotonic()
-        topic = await synthesize_if_needed(job.topic)
+        topic = await synthesize_if_needed(job.topic, mode=job.mode)
         timings["pre_synthesis"] = time.monotonic() - t0
 
         # Step 1: Analyze content
         await job_manager.update_status(job.id, JobStatus.ANALYZING)
         t0 = time.monotonic()
-        analysis = await analyze_content(topic)
+        analysis = await analyze_content(topic, mode=job.mode)
         timings["analysis"] = time.monotonic() - t0
         job.analysis = analysis
 
@@ -76,7 +76,7 @@ async def run_pipeline(job: Job):
         # Step 2: Generate structured content
         await job_manager.update_status(job.id, JobStatus.STRUCTURING)
         t0 = time.monotonic()
-        structured_content = await generate_structured_content(topic, analysis)
+        structured_content = await generate_structured_content(topic, analysis, mode=job.mode)
         timings["structuring"] = time.monotonic() - t0
         job.structured_content = structured_content
 
@@ -128,6 +128,7 @@ async def run_pipeline(job: Job):
             analysis=analysis_md,
             aspect_ratio=job.aspect_ratio,
             language=job.language,
+            mode=job.mode,
         )
         timings["crafting"] = time.monotonic() - t0
         job.prompt = prompt
@@ -225,6 +226,7 @@ async def run_restyle_pipeline(job: Job):
             analysis=analysis_md,
             aspect_ratio=job.aspect_ratio,
             language=job.language,
+            mode=job.mode,
         )
         job.prompt = prompt
 

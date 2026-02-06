@@ -19,7 +19,7 @@ export function HomeHero({ preselectedStyle, onClearStyle }: HomeHeroProps) {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [pendingTopic, setPendingTopic] = useState("");
 
-  const handleSubmit = async (text: string) => {
+  const handleSubmit = async (text: string, mode: string) => {
     // Check if user is logged in
     if (!session) {
       setPendingTopic(text);
@@ -30,6 +30,7 @@ export function HomeHero({ preselectedStyle, onClearStyle }: HomeHeroProps) {
     try {
       const result = await startGeneration.mutateAsync({
         topic: text,
+        mode,
         ...(preselectedStyle ? { style_id: preselectedStyle.id } : {}),
       });
       onClearStyle?.();

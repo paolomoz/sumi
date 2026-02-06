@@ -7,7 +7,7 @@ import { uploadFiles } from "@/lib/api/client";
 const ACCEPTED_TYPES = ".md,.txt,.pdf";
 
 interface ChatInputProps {
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, mode: string) => void;
   placeholder?: string;
   disabled?: boolean;
   skillActive?: boolean;
@@ -22,9 +22,19 @@ export function ChatInput({ onSubmit, placeholder, disabled, skillActive, onSkil
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [mode, setMode] = useState<"detailed" | "fast">("detailed");
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
+
+  // Sync mode from localStorage on mount (avoids hydration mismatch)
+  useEffect(() => {
+    const saved = localStorage.getItem("sumi-generation-mode") as "detailed" | "fast" | null;
+    if (saved && saved !== mode) setMode(saved);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
   useEffect(() => {
@@ -37,6 +47,24 @@ export function ChatInput({ onSubmit, placeholder, disabled, skillActive, onSkil
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [addMenuOpen]);
+
+  // Close mode menu on outside click
+  useEffect(() => {
+    if (!modeMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
+        setModeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [modeMenuOpen]);
+
+  const handleModeChange = (newMode: "detailed" | "fast") => {
+    setMode(newMode);
+    localStorage.setItem("sumi-generation-mode", newMode);
+    setModeMenuOpen(false);
+  };
 
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -75,7 +103,7 @@ export function ChatInput({ onSubmit, placeholder, disabled, skillActive, onSkil
   const handleSubmit = () => {
     const trimmed = value.trim();
     if (!trimmed || disabled || uploading) return;
-    onSubmit(trimmed);
+    onSubmit(trimmed, mode);
     setValue("");
     setUploadedFiles([]);
     if (textareaRef.current) {
@@ -195,6 +223,72 @@ export function ChatInput({ onSubmit, placeholder, disabled, skillActive, onSkil
                     <path d="M8.5 1.5V6H13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Add from local files
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mode chip */}
+          <div className="relative" ref={modeMenuRef}>
+            <button
+              type="button"
+              onClick={() => setModeMenuOpen((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-[var(--radius-full)] border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer",
+                mode === "fast"
+                  ? "border-teal-300/50 bg-teal-50 text-teal-700 hover:bg-teal-100/80 dark:border-teal-700/50 dark:bg-teal-950/30 dark:text-teal-400 dark:hover:bg-teal-950/50"
+                  : "border-border bg-card text-foreground hover:bg-accent"
+              )}
+            >
+              {mode === "fast" ? (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                  <path d="M6.5 1L3 7h3l-.5 4L9 5H6l.5-4z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
+                  <path d="M6 1l1.1 2.5L10 4l-2 2 .5 3L6 7.5 3.5 9l.5-3-2-2 2.9-.5L6 1z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {mode === "fast" ? "Fast" : "Detailed"}
+            </button>
+
+            {modeMenuOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-56 rounded-[var(--radius-md)] border border-border bg-card shadow-lg py-1 z-10">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("detailed")}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="shrink-0 text-muted-foreground">
+                    <path d="M6 1l1.1 2.5L10 4l-2 2 .5 3L6 7.5 3.5 9l.5-3-2-2 2.9-.5L6 1z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">Detailed mode</div>
+                    <div className="text-xs text-muted">~3 minutes, highest quality</div>
+                  </div>
+                  {mode === "detailed" && (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-primary">
+                      <path d="M3 7l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("fast")}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="shrink-0 text-muted-foreground">
+                    <path d="M6.5 1L3 7h3l-.5 4L9 5H6l.5-4z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">Fast mode</div>
+                    <div className="text-xs text-muted">~1 minute, good quality</div>
+                  </div>
+                  {mode === "fast" && (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0 text-primary">
+                      <path d="M3 7l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </button>
               </div>
             )}

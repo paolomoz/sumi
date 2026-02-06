@@ -1,4 +1,4 @@
-from sumi.llm.client import cerebras_chat
+from sumi.llm.client import chat_with_mode
 from sumi.references.loader import get_references
 
 
@@ -12,7 +12,7 @@ using that framework and return your analysis in markdown format as specified.
 Return ONLY the markdown analysis — no wrapping, no extra commentary."""
 
 
-async def analyze_content(topic: str) -> dict:
+async def analyze_content(topic: str, mode: str = "detailed") -> dict:
     """Analyze user topic using the analysis framework reference.
 
     Returns a dict with keys: analysis_markdown, layout_signals, style_signals,
@@ -35,9 +35,10 @@ async def analyze_content(topic: str) -> dict:
 
 Produce the complete analysis following the framework above. Return the analysis as markdown."""
 
-    analysis_md = await cerebras_chat(
+    analysis_md = await chat_with_mode(
         system=SYSTEM_PROMPT,
         user_message=user_message,
+        mode=mode,
         temperature=0.5,
         max_tokens=4096,
     )

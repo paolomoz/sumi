@@ -36,6 +36,7 @@ export function TaskPage({ jobId }: TaskPageProps) {
         layout_name: restData.result.layout_name,
         style_id: restData.result.style_id,
         style_name: restData.result.style_name,
+        mode: restData.result.mode,
       }
     : null);
 

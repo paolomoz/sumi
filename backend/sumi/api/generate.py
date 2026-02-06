@@ -39,6 +39,7 @@ async def create_generation(
         aspect_ratio=request.aspect_ratio,
         language=request.language,
         user_id=user.id,
+        mode=request.mode,
     )
     # Launch pipeline as background task
     asyncio.create_task(run_pipeline(job))
@@ -78,6 +79,7 @@ async def get_job_status(
             style_id=job.style_id,
             style_name=job.style_name,
             analysis=job.analysis,
+            mode=job.mode,
         )
 
     # Build step_data from accumulated job state
@@ -143,6 +145,7 @@ async def restyle_job(
         layout_id=request.layout_id,
         aspect_ratio=request.aspect_ratio,
         language=request.language,
+        mode=request.mode,
     )
     asyncio.create_task(run_restyle_pipeline(job))
     return GenerateResponse(job_id=job.id)
