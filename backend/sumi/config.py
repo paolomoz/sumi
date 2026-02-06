@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     google_api_key: str = ""
+    cerebras_api_key: str = ""
 
     # AWS Bedrock
     use_bedrock: bool = False

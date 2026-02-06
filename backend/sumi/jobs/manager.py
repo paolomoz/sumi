@@ -65,7 +65,6 @@ class JobManager:
             # Pre-populate from source job
             analysis=source_job.analysis,
             structured_content=source_job.structured_content,
-            recommendations=source_job.recommendations,
         )
         self._jobs[job_id] = job
         return job

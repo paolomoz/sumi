@@ -40,20 +40,17 @@ export function TaskPage({ jobId }: TaskPageProps) {
     : null);
 
   const handleStyleSelect = useCallback(
-    async (styleId: string) => {
-      const layoutId =
-        stepData.recommending?.recommendations?.[0]?.layout_id;
-      if (!layoutId) return;
+    async (styleId: string, layoutId?: string) => {
       try {
         await confirmSelection(jobId, {
           style_id: styleId,
-          layout_id: layoutId,
+          layout_id: layoutId || "bento-grid",
         });
       } catch {
-        // pipeline uses default on timeout
+        // pipeline will wait indefinitely for selection
       }
     },
-    [jobId, stepData.recommending?.recommendations]
+    [jobId]
   );
 
   return (

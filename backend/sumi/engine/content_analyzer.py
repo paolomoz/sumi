@@ -1,4 +1,4 @@
-from sumi.llm.client import chat
+from sumi.llm.client import cerebras_chat
 from sumi.references.loader import get_references
 
 
@@ -35,7 +35,7 @@ async def analyze_content(topic: str) -> dict:
 
 Produce the complete analysis following the framework above. Return the analysis as markdown."""
 
-    analysis_md = await chat(
+    analysis_md = await cerebras_chat(
         system=SYSTEM_PROMPT,
         user_message=user_message,
         temperature=0.5,

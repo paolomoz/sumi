@@ -90,7 +90,6 @@ class JobResult(BaseModel):
     style_id: str | None = None
     style_name: str | None = None
     analysis: dict | None = None
-    recommendations: list[CombinationRecommendation] | None = None
 
 
 class ConfirmSelectionRequest(BaseModel):

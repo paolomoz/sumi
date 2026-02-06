@@ -144,8 +144,13 @@ End with:
 (Organize ALL text that should appear in the infographic, grouped by area: \
 Title, Hub/Center, Section Labels, Section Content, Key Phrases, Attribution.)"""
 
+    # Use structured system blocks with prompt caching
+    system = [
+        {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
+    ]
+
     creative_sections = await chat(
-        system=SYSTEM_PROMPT,
+        system=system,
         user_message=user_message,
         temperature=0.7,
         max_tokens=8192,

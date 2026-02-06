@@ -9,7 +9,6 @@ import { ActivityCard } from "./activity-card";
 import {
   AnalyzingDoneMessage,
   StructuringDoneMessage,
-  StyleCountdown,
   StyleSelectedMessage,
   CraftingDoneMessage,
 } from "./step-messages";
@@ -24,7 +23,6 @@ type StepStatus = "pending" | "active" | "done";
 const STEP_ORDER = [
   "analyzing",
   "structuring",
-  "recommending",
   "crafting",
   "generating",
 ] as const;
@@ -33,12 +31,11 @@ const STATUS_TO_STEP_INDEX: Record<string, number> = {
   queued: -1,
   analyzing: 0,
   structuring: 1,
-  recommending: 2,
-  awaiting_selection: 2,
-  crafting: 3,
-  generating: 4,
-  completed: 5,
-  failed: 5,
+  awaiting_selection: 1,
+  crafting: 2,
+  generating: 3,
+  completed: 4,
+  failed: 4,
 };
 
 /* ---- Per-step activity card config ---- */
@@ -65,18 +62,6 @@ const STEP_ACTIVITY: Record<
     ),
     title: "Structuring content",
     subtitle: "Organizing the key information\u2026",
-  },
-  recommending: {
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="9.5" y="1.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="1.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="9.5" y="9.5" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-      </svg>
-    ),
-    title: "Finding style combinations",
-    subtitle: "Exploring visual styles\u2026",
   },
   crafting: {
     icon: (
@@ -161,7 +146,6 @@ export function ChatColumn({
     !!result,
     !!stepData.analyzing,
     !!stepData.structuring,
-    !!stepData.recommending,
     !!stepData.crafting,
   ]);
 
@@ -246,17 +230,15 @@ export function ChatColumn({
           <AnalyzingDoneMessage key="analyzing-done" data={stepData.analyzing} />
         );
       } else if (step === "structuring") {
+        // After structuring is done and selection happened, show the selected style
+        const selStyleId = result?.style_id ?? stepData.selection?.style_id;
+        const selStyleName = result?.style_name ?? stepData.selection?.style_name;
         elements.push(
           <StructuringDoneMessage
             key="structuring-done"
             preview={stepData.structuring?.preview}
           />
         );
-      } else if (step === "recommending") {
-        // After selection is done, show the selected style as a compact card
-        // Only show when user explicitly selected (via result or selection step data) — never fall back to recommendation
-        const selStyleId = result?.style_id ?? stepData.selection?.style_id;
-        const selStyleName = result?.style_name ?? stepData.selection?.style_name;
         if (selStyleId && selStyleName) {
           elements.push(
             <StyleSelectedMessage
@@ -276,19 +258,16 @@ export function ChatColumn({
       }
     }
 
-    // Recommending special case: show countdown when awaiting selection
+    // Show style picker prompt when awaiting selection (after structuring step)
     if (
-      step === "recommending" &&
+      step === "structuring" &&
       stepStatus === "active" &&
-      status === "awaiting_selection" &&
-      stepData.recommending?.recommendations &&
-      stepData.recommending.recommendations.length > 0
+      status === "awaiting_selection"
     ) {
       elements.push(
-        <StyleCountdown
-          key="style-countdown"
+        <StylePickerPrompt
+          key="style-picker-prompt"
           jobId={jobId}
-          recommendations={stepData.recommending.recommendations}
           isAwaitingSelection={status === "awaiting_selection"}
         />
       );
@@ -381,6 +360,91 @@ export function ChatColumn({
           )}
 
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---- Inline style picker prompt (shown during awaiting_selection) ---- */
+
+import { confirmSelection } from "@/lib/api/client";
+
+function StylePickerPrompt({
+  jobId,
+  isAwaitingSelection,
+}: {
+  jobId: string;
+  isAwaitingSelection: boolean;
+}) {
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const confirmedRef = useRef(false);
+  const { data: allStyles } = useStyles();
+
+  const handleStyleSelect = async (styleId: string) => {
+    if (confirmedRef.current) return;
+    setSelectedStyleId(styleId);
+    confirmedRef.current = true;
+    try {
+      await confirmSelection(jobId, {
+        layout_id: "bento-grid", // default layout
+        style_id: styleId,
+      });
+    } catch {
+      // fallback
+    }
+  };
+
+  if (!isAwaitingSelection) return null;
+
+  return (
+    <div className="space-y-3">
+      {/* Desktop: text prompt pointing to panel */}
+      <div className="hidden lg:block text-sm leading-relaxed text-muted">
+        Pick a style from the panel to continue.
+      </div>
+
+      {/* Mobile: inline style picker */}
+      <div className="lg:hidden space-y-3">
+        <div className="text-sm leading-relaxed text-muted">
+          Pick a style to continue.
+        </div>
+
+        {allStyles && allStyles.length > 0 && (
+          <div className="rounded-[var(--radius-lg)] border border-border bg-card p-3">
+            <div className="max-h-48 overflow-y-auto -mr-1 pr-1">
+              <div className="grid grid-cols-3 gap-2">
+                {allStyles.map((style) => {
+                  const isSelected = selectedStyleId === style.id;
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => handleStyleSelect(style.id)}
+                      disabled={confirmedRef.current}
+                      className={cn(
+                        "relative text-left rounded-[var(--radius-md)] border p-1.5 transition-all cursor-pointer",
+                        "hover:border-primary/50 hover:shadow-sm",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        isSelected
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border"
+                      )}
+                    >
+                      <img
+                        src={`/styles/${style.id}.jpg`}
+                        alt={style.name}
+                        className="w-full aspect-[4/3] rounded object-cover mb-1"
+                      />
+                      <p className="text-[10px] font-medium truncate leading-tight">
+                        {style.name}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

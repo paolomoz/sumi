@@ -8,7 +8,6 @@ class JobStatus(str, Enum):
     QUEUED = "queued"
     ANALYZING = "analyzing"
     STRUCTURING = "structuring"
-    RECOMMENDING = "recommending"
     AWAITING_SELECTION = "awaiting_selection"
     CRAFTING = "crafting"
     GENERATING = "generating"
@@ -19,11 +18,10 @@ class JobStatus(str, Enum):
 STEP_PROGRESS = {
     JobStatus.QUEUED: 0.0,
     JobStatus.ANALYZING: 0.1,
-    JobStatus.STRUCTURING: 0.25,
-    JobStatus.RECOMMENDING: 0.4,
-    JobStatus.AWAITING_SELECTION: 0.45,
-    JobStatus.CRAFTING: 0.55,
-    JobStatus.GENERATING: 0.7,
+    JobStatus.STRUCTURING: 0.3,
+    JobStatus.AWAITING_SELECTION: 0.5,
+    JobStatus.CRAFTING: 0.6,
+    JobStatus.GENERATING: 0.75,
     JobStatus.COMPLETED: 1.0,
     JobStatus.FAILED: 0.0,
 }
@@ -32,7 +30,6 @@ STEP_MESSAGES = {
     JobStatus.QUEUED: "Waiting in queue...",
     JobStatus.ANALYZING: "Reading through your topic...",
     JobStatus.STRUCTURING: "Organizing the key information...",
-    JobStatus.RECOMMENDING: "Exploring visual styles...",
     JobStatus.AWAITING_SELECTION: "Pick a style to continue.",
     JobStatus.CRAFTING: "Writing the design prompt...",
     JobStatus.GENERATING: "Painting your infographic...",
@@ -40,7 +37,7 @@ STEP_MESSAGES = {
     JobStatus.FAILED: "Generation failed",
 }
 
-# Restyle pipeline: shorter progress (skips analysis/structuring/recommending)
+# Restyle pipeline: shorter progress (skips analysis/structuring)
 RESTYLE_STEP_PROGRESS = {
     JobStatus.QUEUED: 0.0,
     JobStatus.CRAFTING: 0.2,
@@ -76,7 +73,6 @@ class Job:
     # Results populated during pipeline
     analysis: dict | None = None
     structured_content: str | None = None
-    recommendations: list[dict] | None = None
     prompt: str | None = None
     image_url: str | None = None
     layout_name: str | None = None

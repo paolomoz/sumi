@@ -13,7 +13,6 @@ from sumi.api.schemas import (
     JobStatusResponse,
     JobProgress,
     JobResult,
-    CombinationRecommendation,
 )
 from sumi.jobs.manager import job_manager
 from sumi.jobs.models import (
@@ -72,11 +71,6 @@ async def get_job_status(
 
     result = None
     if job.status == JobStatus.COMPLETED:
-        recommendations = None
-        if job.recommendations:
-            recommendations = [
-                CombinationRecommendation(**r) for r in job.recommendations
-            ]
         result = JobResult(
             image_url=job.image_url,
             layout_id=job.layout_id,
@@ -84,7 +78,6 @@ async def get_job_status(
             style_id=job.style_id,
             style_name=job.style_name,
             analysis=job.analysis,
-            recommendations=recommendations,
         )
 
     # Build step_data from accumulated job state

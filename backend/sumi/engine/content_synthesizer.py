@@ -7,7 +7,7 @@ can work with effectively. Short inputs pass through unchanged.
 
 import logging
 
-from sumi.llm.client import chat
+from sumi.llm.client import cerebras_chat
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ Important phrases worth featuring in the infographic, preserved verbatim.
 ### Audience & Tone
 Who this is for and what tone the infographic should strike."""
 
-    brief = await chat(
+    brief = await cerebras_chat(
         system=SYSTEM_PROMPT,
         user_message=user_message,
         temperature=0.3,

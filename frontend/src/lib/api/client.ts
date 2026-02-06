@@ -1,4 +1,4 @@
-import { Layout, Style, CombinationRecommendation } from "@/types/style";
+import { Layout, Style } from "@/types/style";
 import { GenerateRequest, GenerationHistoryItem, JobStatus } from "@/types/generation";
 
 const API_BASE = "/api";
@@ -38,16 +38,6 @@ export async function fetchStyles(): Promise<Style[]> {
 
 export async function fetchStyle(styleId: string): Promise<Style> {
   return fetchJson<Style>(`/styles/${styleId}`);
-}
-
-// Recommendations
-export async function fetchRecommendations(
-  topic: string
-): Promise<{ recommendations: CombinationRecommendation[] }> {
-  return fetchJson(`/recommend`, {
-    method: "POST",
-    body: JSON.stringify({ topic }),
-  });
 }
 
 // Generation

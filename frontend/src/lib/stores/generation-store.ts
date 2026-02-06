@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { CombinationRecommendation } from "@/types/style";
 
 interface GenerationState {
   // Input
@@ -11,7 +10,6 @@ interface GenerationState {
 
   // Results
   jobId: string | null;
-  recommendations: CombinationRecommendation[];
 
   // Actions
   setTopic: (topic: string) => void;
@@ -21,7 +19,6 @@ interface GenerationState {
   setAspectRatio: (ratio: string) => void;
   setLanguage: (language: string) => void;
   setJobId: (id: string) => void;
-  setRecommendations: (recs: CombinationRecommendation[]) => void;
   reset: () => void;
 }
 
@@ -32,7 +29,6 @@ const initialState = {
   aspectRatio: "16:9",
   language: "English",
   jobId: null as string | null,
-  recommendations: [] as CombinationRecommendation[],
 };
 
 export const useGenerationStore = create<GenerationState>((set) => ({
@@ -46,6 +42,5 @@ export const useGenerationStore = create<GenerationState>((set) => ({
   setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
   setLanguage: (language) => set({ language }),
   setJobId: (id) => set({ jobId: id }),
-  setRecommendations: (recs) => set({ recommendations: recs }),
   reset: () => set(initialState),
 }));

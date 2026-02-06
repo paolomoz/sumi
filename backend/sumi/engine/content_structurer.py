@@ -21,13 +21,13 @@ async def generate_structured_content(topic: str, analysis: dict) -> str:
     template = refs.get_framework("structured-content-template")
     analysis_md = analysis.get("analysis_markdown", topic)
 
-    user_message = f"""## Structured Content Template
+    # Use structured system blocks with prompt caching for the template
+    system = [
+        {"type": "text", "text": SYSTEM_PROMPT},
+        {"type": "text", "text": template, "cache_control": {"type": "ephemeral"}},
+    ]
 
-{template}
-
----
-
-## Content Analysis
+    user_message = f"""## Content Analysis
 
 {analysis_md}
 
@@ -39,11 +39,11 @@ async def generate_structured_content(topic: str, analysis: dict) -> str:
 
 ---
 
-Generate the structured content following the template above. Include all text labels \
+Generate the structured content following the template in the system prompt. Include all text labels \
 that should appear in the infographic. Preserve all data points verbatim from the analysis."""
 
     structured_content = await chat(
-        system=SYSTEM_PROMPT,
+        system=system,
         user_message=user_message,
         temperature=0.5,
         max_tokens=4096,

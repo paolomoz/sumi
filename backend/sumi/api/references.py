@@ -5,14 +5,8 @@ from sumi.api.schemas import (
     LayoutDetailResponse,
     StyleResponse,
     StyleDetailResponse,
-    RecommendRequest,
-    RecommendResponse,
-    CombinationRecommendation,
 )
 from sumi.references.loader import get_references
-from sumi.engine.combination_recommender import recommend_combinations
-from sumi.engine.content_analyzer import analyze_content
-from sumi.engine.content_synthesizer import synthesize_if_needed
 
 router = APIRouter(prefix="/api", tags=["references"])
 
@@ -70,14 +64,4 @@ async def get_style(style_id: str):
         name=style.name,
         best_for=style.best_for,
         content=style.content,
-    )
-
-
-@router.post("/recommend", response_model=RecommendResponse)
-async def recommend(request: RecommendRequest):
-    topic = await synthesize_if_needed(request.topic)
-    analysis = await analyze_content(topic)
-    recommendations = await recommend_combinations(topic, analysis)
-    return RecommendResponse(
-        recommendations=[CombinationRecommendation(**r) for r in recommendations]
     )

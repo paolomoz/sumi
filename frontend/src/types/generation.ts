@@ -1,5 +1,3 @@
-import { CombinationRecommendation } from "./style";
-
 export interface GenerateRequest {
   topic: string;
   style_id?: string;
@@ -22,7 +20,6 @@ export interface JobResult {
   style_id: string | null;
   style_name: string | null;
   analysis: Record<string, unknown> | null;
-  recommendations: CombinationRecommendation[] | null;
 }
 
 export interface StepDataMap {
@@ -34,16 +31,6 @@ export interface StepDataMap {
   };
   structuring?: {
     preview?: string;
-  };
-  recommending?: {
-    recommendations?: Array<{
-      layout_id: string;
-      layout_name: string;
-      style_id: string;
-      style_name: string;
-      rationale: string;
-      approach: string;
-    }>;
   };
   selection?: {
     style_id?: string;

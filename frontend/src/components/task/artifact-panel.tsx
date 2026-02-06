@@ -29,7 +29,7 @@ interface ArtifactPanelProps {
   } | null;
   stepData: StepDataMap;
   jobId: string;
-  onStyleSelect?: (styleId: string) => void;
+  onStyleSelect?: (styleId: string, layoutId?: string) => void;
 }
 
 export function ArtifactPanel({ status, progress, result, stepData, jobId, onStyleSelect }: ArtifactPanelProps) {
@@ -43,9 +43,9 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
 
   const isAwaitingSelection = status === "awaiting_selection";
 
-  // Compute available tabs
+  // Compute available tabs — show styles tab once structuring step data is available
   const availableTabs: TabId[] = [];
-  if (stepData.recommending) availableTabs.push("styles");
+  if (stepData.structuring || isAwaitingSelection) availableTabs.push("styles");
   if (imageUrl || isGenerating) availableTabs.push("image");
 
   // Auto-select latest tab as data arrives; force styles tab during selection
@@ -56,7 +56,7 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
       setActiveTab(availableTabs[availableTabs.length - 1]);
     }
   }, [
-    !!stepData.recommending,
+    !!stepData.structuring,
     !!imageUrl,
     isGenerating,
     isAwaitingSelection,
@@ -126,10 +126,9 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
               {progress > 0 && <ProgressBar value={progress} className="w-full max-w-xs" />}
             </div>
           </div>
-        ) : activeTab === "styles" && stepData.recommending ? (
+        ) : activeTab === "styles" ? (
           <div className="flex-1 overflow-auto p-4">
             <StyleGalleryTab
-              recommendations={stepData.recommending.recommendations}
               selectedStyleId={stepData.selection?.style_id}
               onStyleSelect={onStyleSelect}
               isAwaitingSelection={isAwaitingSelection}
@@ -355,19 +354,16 @@ function FullscreenViewer({
 /* ---------- Tab content components ---------- */
 
 function StyleGalleryTab({
-  recommendations,
   selectedStyleId,
   onStyleSelect,
   isAwaitingSelection,
 }: {
-  recommendations?: Array<{ style_id: string; style_name: string }>;
   selectedStyleId?: string;
-  onStyleSelect?: (styleId: string) => void;
+  onStyleSelect?: (styleId: string, layoutId?: string) => void;
   isAwaitingSelection: boolean;
 }) {
   const { data: allStyles } = useStyles();
-  // Use the actual selected style if available, otherwise fall back to best_match recommendation
-  const bestMatchStyleId = selectedStyleId ?? recommendations?.[0]?.style_id;
+  const bestMatchStyleId = selectedStyleId;
 
   if (!allStyles || allStyles.length === 0) {
     return (
