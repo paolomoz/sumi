@@ -29,10 +29,11 @@ interface ArtifactPanelProps {
   } | null;
   stepData: StepDataMap;
   jobId: string;
-  onStyleSelect?: (styleId: string, layoutId?: string) => void;
+  pendingStyleId?: string | null;
+  onStylePreselect?: (styleId: string) => void;
 }
 
-export function ArtifactPanel({ status, progress, result, stepData, jobId, onStyleSelect }: ArtifactPanelProps) {
+export function ArtifactPanel({ status, progress, result, stepData, jobId, pendingStyleId, onStylePreselect }: ArtifactPanelProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const [previewZoom, setPreviewZoom] = useState<number | null>(null); // null = fit
@@ -129,8 +130,9 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
         ) : activeTab === "styles" ? (
           <div className="flex-1 overflow-auto p-4">
             <StyleGalleryTab
-              selectedStyleId={stepData.selection?.style_id}
-              onStyleSelect={onStyleSelect}
+              bestMatchStyleId={stepData.selection?.style_id}
+              pendingStyleId={pendingStyleId}
+              onStylePreselect={onStylePreselect}
               isAwaitingSelection={isAwaitingSelection}
             />
           </div>
@@ -354,16 +356,17 @@ function FullscreenViewer({
 /* ---------- Tab content components ---------- */
 
 function StyleGalleryTab({
-  selectedStyleId,
-  onStyleSelect,
+  bestMatchStyleId,
+  pendingStyleId,
+  onStylePreselect,
   isAwaitingSelection,
 }: {
-  selectedStyleId?: string;
-  onStyleSelect?: (styleId: string, layoutId?: string) => void;
+  bestMatchStyleId?: string;
+  pendingStyleId?: string | null;
+  onStylePreselect?: (styleId: string) => void;
   isAwaitingSelection: boolean;
 }) {
   const { data: allStyles } = useStyles();
-  const bestMatchStyleId = selectedStyleId;
 
   if (!allStyles || allStyles.length === 0) {
     return (
@@ -377,33 +380,49 @@ function StyleGalleryTab({
     <div className="grid grid-cols-4 gap-2">
       {allStyles.map((style) => {
         const isBestMatch = style.id === bestMatchStyleId;
+        const isSelected = style.id === pendingStyleId;
         return (
           <button
             key={style.id}
             type="button"
             disabled={!isAwaitingSelection}
-            onClick={() => isAwaitingSelection && onStyleSelect?.(style.id)}
+            onClick={() => isAwaitingSelection && onStylePreselect?.(style.id)}
             className={cn(
               "relative text-left rounded-[var(--radius-md)] border p-1.5 transition-all",
               isAwaitingSelection
                 ? "cursor-pointer hover:border-primary/50 hover:shadow-sm"
                 : "cursor-default",
-              isBestMatch
-                ? "border-primary ring-2 ring-primary/20"
-                : "border-border"
+              isSelected
+                ? "border-primary ring-2 ring-primary/30 bg-primary/5 shadow-md"
+                : isBestMatch
+                  ? "border-primary/40 ring-1 ring-primary/10"
+                  : "border-border"
             )}
           >
-            {isBestMatch && (
+            {isBestMatch && !isSelected && (
               <span className="absolute -top-1.5 -right-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground font-bold">
                 ★
+              </span>
+            )}
+            {isSelected && (
+              <span className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5.5L4 7.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
             )}
             <img
               src={`/styles/${style.id}.jpg`}
               alt={style.name}
-              className="w-full aspect-[4/3] rounded object-cover mb-1"
+              className={cn(
+                "w-full aspect-[4/3] rounded object-cover mb-1 transition-opacity",
+                isSelected ? "opacity-100" : isAwaitingSelection ? "opacity-90" : "opacity-70"
+              )}
             />
-            <p className="text-[10px] font-medium truncate leading-tight">
+            <p className={cn(
+              "text-[10px] font-medium truncate leading-tight transition-colors",
+              isSelected ? "text-primary" : ""
+            )}>
               {style.name}
             </p>
           </button>

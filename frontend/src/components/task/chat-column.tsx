@@ -101,6 +101,10 @@ interface ChatColumnProps {
     mode?: string | null;
   } | null;
   error: string | null;
+  pendingStyleId?: string | null;
+  onPendingStyleSelect?: (styleId: string) => void;
+  onConfirmStyle?: () => void;
+  isConfirming?: boolean;
 }
 
 export function ChatColumn({
@@ -112,6 +116,10 @@ export function ChatColumn({
   stepData,
   result,
   error,
+  pendingStyleId,
+  onPendingStyleSelect,
+  onConfirmStyle,
+  isConfirming,
 }: ChatColumnProps) {
   const router = useRouter();
   const startGeneration = useStartGeneration();
@@ -145,6 +153,7 @@ export function ChatColumn({
     currentStepIndex,
     status,
     showStylePicker,
+    pendingStyleId,
     !!result,
     !!stepData.analyzing,
     !!stepData.structuring,
@@ -288,6 +297,10 @@ export function ChatColumn({
           key="style-picker-prompt"
           jobId={jobId}
           isAwaitingSelection={status === "awaiting_selection"}
+          pendingStyleId={pendingStyleId ?? null}
+          onPendingStyleSelect={onPendingStyleSelect}
+          onConfirmStyle={onConfirmStyle}
+          isConfirming={isConfirming}
         />
       );
     }
@@ -407,75 +420,118 @@ export function ChatColumn({
 
 /* ---- Inline style picker prompt (shown during awaiting_selection) ---- */
 
-import { confirmSelection } from "@/lib/api/client";
-
 function StylePickerPrompt({
   jobId,
   isAwaitingSelection,
+  pendingStyleId,
+  onPendingStyleSelect,
+  onConfirmStyle,
+  isConfirming,
 }: {
   jobId: string;
   isAwaitingSelection: boolean;
+  pendingStyleId: string | null;
+  onPendingStyleSelect?: (styleId: string) => void;
+  onConfirmStyle?: () => void;
+  isConfirming?: boolean;
 }) {
-  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
-  const confirmedRef = useRef(false);
   const { data: allStyles } = useStyles();
-
-  const handleStyleSelect = async (styleId: string) => {
-    if (confirmedRef.current) return;
-    setSelectedStyleId(styleId);
-    confirmedRef.current = true;
-    try {
-      await confirmSelection(jobId, {
-        layout_id: "bento-grid", // default layout
-        style_id: styleId,
-      });
-    } catch {
-      // fallback
-    }
-  };
 
   if (!isAwaitingSelection) return null;
 
+  const selectedStyle = pendingStyleId
+    ? allStyles?.find((s) => s.id === pendingStyleId)
+    : null;
+
   return (
     <div className="space-y-3">
-      {/* Desktop: text prompt pointing to panel */}
-      <div className="hidden lg:block text-sm leading-relaxed text-muted">
-        Pick a style from the panel to continue.
+      {/* Prompt text */}
+      <div className="text-sm leading-relaxed text-muted">
+        <span className="hidden lg:inline">Pick a style from the panel to continue.</span>
+        <span className="lg:hidden">Pick a style to continue.</span>
       </div>
 
-      {/* Mobile: inline style picker */}
-      <div className="lg:hidden space-y-3">
-        <div className="text-sm leading-relaxed text-muted">
-          Pick a style to continue.
+      {/* Desktop: show selected style card + Continue button when a style is picked */}
+      {pendingStyleId && selectedStyle && (
+        <div className="hidden lg:flex items-center gap-3 rounded-[var(--radius-lg)] border-2 border-primary bg-primary/5 p-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <img
+            src={`/styles/${selectedStyle.id}.jpg`}
+            alt={selectedStyle.name}
+            className="w-14 h-10 rounded-[var(--radius-md)] object-cover shrink-0 ring-1 ring-primary/20"
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted">Selected style</p>
+            <p className="text-sm font-medium truncate">{selectedStyle.name}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onConfirmStyle}
+            disabled={isConfirming}
+            className={cn(
+              "shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-all cursor-pointer",
+              "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+              isConfirming && "opacity-70 cursor-not-allowed"
+            )}
+          >
+            {isConfirming ? (
+              <>
+                <div className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              <>
+                Continue
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M5 3l5 4-5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            )}
+          </button>
         </div>
+      )}
 
+      {/* Mobile: inline style picker grid */}
+      <div className="lg:hidden space-y-3">
         {allStyles && allStyles.length > 0 && (
           <div className="rounded-[var(--radius-lg)] border border-border bg-card p-3">
             <div className="max-h-48 overflow-y-auto -mr-1 pr-1">
               <div className="grid grid-cols-3 gap-2">
                 {allStyles.map((style) => {
-                  const isSelected = selectedStyleId === style.id;
+                  const isSelected = pendingStyleId === style.id;
                   return (
                     <button
                       key={style.id}
                       type="button"
-                      onClick={() => handleStyleSelect(style.id)}
-                      disabled={confirmedRef.current}
+                      onClick={() => onPendingStyleSelect?.(style.id)}
+                      disabled={isConfirming}
                       className={cn(
                         "relative text-left rounded-[var(--radius-md)] border p-1.5 transition-all cursor-pointer",
                         "hover:border-primary/50 hover:shadow-sm",
                         "disabled:opacity-50 disabled:cursor-not-allowed",
                         isSelected
-                          ? "border-primary ring-2 ring-primary/20"
+                          ? "border-primary ring-2 ring-primary/30 bg-primary/5 shadow-md"
                           : "border-border"
                       )}
                     >
+                      {isSelected && (
+                        <span className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5.5L4 7.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      )}
                       <img
                         src={`/styles/${style.id}.jpg`}
                         alt={style.name}
-                        className="w-full aspect-[4/3] rounded object-cover mb-1"
+                        className={cn(
+                          "w-full aspect-[4/3] rounded object-cover mb-1 transition-opacity",
+                          isSelected ? "opacity-100" : "opacity-90"
+                        )}
                       />
-                      <p className="text-[10px] font-medium truncate leading-tight">
+                      <p className={cn(
+                        "text-[10px] font-medium truncate leading-tight transition-colors",
+                        isSelected ? "text-primary" : ""
+                      )}>
                         {style.name}
                       </p>
                     </button>
@@ -483,6 +539,39 @@ function StylePickerPrompt({
                 })}
               </div>
             </div>
+
+            {/* Mobile: Continue button below grid */}
+            {pendingStyleId && selectedStyle && (
+              <div className="mt-3 pt-3 border-t border-border flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted">Selected: <span className="font-medium text-foreground">{selectedStyle.name}</span></p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onConfirmStyle}
+                  disabled={isConfirming}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium transition-all cursor-pointer",
+                    "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+                    isConfirming && "opacity-70 cursor-not-allowed"
+                  )}
+                >
+                  {isConfirming ? (
+                    <>
+                      <div className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
+                      Confirming...
+                    </>
+                  ) : (
+                    <>
+                      Continue
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M5 3l5 4-5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

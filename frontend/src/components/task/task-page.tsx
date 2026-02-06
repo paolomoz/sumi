@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useJobStatus } from "@/lib/hooks/use-generation";
 import { useTaskSSE } from "@/lib/hooks/use-task-sse";
 import { confirmSelection } from "@/lib/api/client";
@@ -14,6 +14,8 @@ interface TaskPageProps {
 export function TaskPage({ jobId }: TaskPageProps) {
   const { data: restData } = useJobStatus(jobId);
   const sse = useTaskSSE(jobId);
+  const [pendingStyleId, setPendingStyleId] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Merge REST + SSE: SSE takes precedence when connected
   const status = sse.status || restData?.status || "queued";
@@ -40,19 +42,26 @@ export function TaskPage({ jobId }: TaskPageProps) {
       }
     : null);
 
-  const handleStyleSelect = useCallback(
-    async (styleId: string, layoutId?: string) => {
-      try {
-        await confirmSelection(jobId, {
-          style_id: styleId,
-          layout_id: layoutId || "bento-grid",
-        });
-      } catch {
-        // pipeline will wait indefinitely for selection
-      }
-    },
-    [jobId]
-  );
+  // Pre-select a style (visual only, no confirmation yet)
+  const handleStylePreselect = useCallback((styleId: string) => {
+    setPendingStyleId(styleId);
+  }, []);
+
+  // Actually confirm the pending style and continue the pipeline
+  const handleConfirmStyle = useCallback(async () => {
+    if (!pendingStyleId || isConfirming) return;
+    setIsConfirming(true);
+    try {
+      await confirmSelection(jobId, {
+        style_id: pendingStyleId,
+        layout_id: "bento-grid",
+      });
+    } catch {
+      // pipeline will wait indefinitely for selection
+    } finally {
+      setIsConfirming(false);
+    }
+  }, [jobId, pendingStyleId, isConfirming]);
 
   return (
     <div className="flex h-full min-w-0">
@@ -65,6 +74,10 @@ export function TaskPage({ jobId }: TaskPageProps) {
         stepData={stepData}
         result={result}
         error={error}
+        pendingStyleId={pendingStyleId}
+        onPendingStyleSelect={handleStylePreselect}
+        onConfirmStyle={handleConfirmStyle}
+        isConfirming={isConfirming}
       />
       <ArtifactPanel
         status={status}
@@ -72,7 +85,8 @@ export function TaskPage({ jobId }: TaskPageProps) {
         result={result}
         stepData={stepData}
         jobId={jobId}
-        onStyleSelect={handleStyleSelect}
+        pendingStyleId={pendingStyleId}
+        onStylePreselect={handleStylePreselect}
       />
     </div>
   );
