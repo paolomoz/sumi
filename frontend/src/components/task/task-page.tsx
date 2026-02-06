@@ -57,7 +57,7 @@ export function TaskPage({ jobId }: TaskPageProps) {
   );
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-w-0">
       <ChatColumn
         jobId={jobId}
         topic={topic}

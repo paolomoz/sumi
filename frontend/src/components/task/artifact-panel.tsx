@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn, downloadFile } from "@/lib/utils";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { useStyles } from "@/lib/hooks/use-references";
@@ -14,6 +14,8 @@ const TAB_LABELS: Record<TabId, string> = {
   styles: "Styles",
   image: "Image",
 };
+
+const ZOOM_LEVELS = [25, 50, 75, 100, 150, 200];
 
 interface ArtifactPanelProps {
   status: string;
@@ -33,6 +35,8 @@ interface ArtifactPanelProps {
 export function ArtifactPanel({ status, progress, result, stepData, jobId, onStyleSelect }: ArtifactPanelProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
+  const [previewZoom, setPreviewZoom] = useState<number | null>(null); // null = fit
+  const [fullscreenZoom, setFullscreenZoom] = useState<number | null>(null); // null = fit
   const isCompleted = status === "completed";
   const isGenerating = status === "generating";
   const imageUrl = result?.image_url;
@@ -60,6 +64,12 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
 
   const showTabs = availableTabs.length > 0;
 
+  const handleDownload = useCallback(() => {
+    if (imageUrl) {
+      downloadFile(imageUrl, `sumi-infographic-${Date.now()}.png`);
+    }
+  }, [imageUrl]);
+
   return (
     <aside className="hidden lg:flex flex-1 min-w-0 min-h-0 flex-col border-l border-border bg-card/50">
       {/* Header */}
@@ -73,32 +83,6 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
               <p className="text-xs text-muted">{result.style_name}</p>
             )}
           </div>
-
-          {/* Action buttons */}
-          {isCompleted && imageUrl && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() =>
-                  downloadFile(imageUrl, `sumi-infographic-${Date.now()}.png`)
-                }
-                className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] text-muted hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-                title="Download"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 2v8M7 10l-3-3M7 10l3-3M2 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setFullscreen(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-md)] text-muted hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-                title="Fullscreen"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 5V2h3M9 2h3v3M12 9v3h-3M5 12H2V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Tab bar */}
@@ -124,10 +108,10 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
       </div>
 
       {/* Content area */}
-      <div className="flex-1 flex flex-col overflow-auto min-w-0 p-4">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {!showTabs ? (
           /* Empty placeholder */
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center p-4">
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="w-full max-w-xs aspect-video rounded-[var(--radius-lg)] border-2 border-dashed border-border/60 flex items-center justify-center">
                 <div className="space-y-1.5">
@@ -143,75 +127,228 @@ export function ArtifactPanel({ status, progress, result, stepData, jobId, onSty
             </div>
           </div>
         ) : activeTab === "styles" && stepData.recommending ? (
-          <StyleGalleryTab
-            recommendations={stepData.recommending.recommendations}
-            selectedStyleId={stepData.selection?.style_id}
-            onStyleSelect={onStyleSelect}
-            isAwaitingSelection={isAwaitingSelection}
-          />
+          <div className="flex-1 overflow-auto p-4">
+            <StyleGalleryTab
+              recommendations={stepData.recommending.recommendations}
+              selectedStyleId={stepData.selection?.style_id}
+              onStyleSelect={onStyleSelect}
+              isAwaitingSelection={isAwaitingSelection}
+            />
+          </div>
         ) : activeTab === "image" ? (
           <ImageTab
             imageUrl={imageUrl}
             isGenerating={isGenerating}
             progress={progress}
-            onFullscreen={() => setFullscreen(true)}
+            zoom={previewZoom}
+            onZoomChange={setPreviewZoom}
+            onFullscreen={() => {
+              setFullscreenZoom(previewZoom);
+              setFullscreen(true);
+            }}
+            onDownload={handleDownload}
+            isCompleted={isCompleted}
           />
         ) : null}
       </div>
 
       {/* Fullscreen lightbox */}
       {fullscreen && imageUrl && (
-        <DialogPrimitive.Root open onOpenChange={(open) => !open && setFullscreen(false)}>
-          <DialogPrimitive.Portal>
-            <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/95 data-[state=open]:animate-in data-[state=open]:fade-in" />
-            <DialogPrimitive.Content
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              aria-describedby={undefined}
-            >
-              <VisuallyHidden.Root>
-                <DialogPrimitive.Title>Infographic Preview</DialogPrimitive.Title>
-              </VisuallyHidden.Root>
-
-              <DialogPrimitive.Close
-                className="absolute top-4 right-4 z-10 text-white/70 hover:text-white transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </DialogPrimitive.Close>
-
-              <img
-                src={imageUrl}
-                alt="Generated infographic"
-                className="max-h-[90vh] max-w-[90vw] object-contain"
-              />
-
-              {/* Bottom bar */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-6 py-5 flex items-end justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  {result?.style_name && (
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/20 text-white/90 backdrop-blur-sm mb-1.5">
-                      {result.style_name}
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    downloadFile(imageUrl, `sumi-infographic-${Date.now()}.png`)
-                  }
-                  className="shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
-                >
-                  Download
-                </button>
-              </div>
-            </DialogPrimitive.Content>
-          </DialogPrimitive.Portal>
-        </DialogPrimitive.Root>
+        <FullscreenViewer
+          imageUrl={imageUrl}
+          styleName={result?.style_name}
+          zoom={fullscreenZoom}
+          onZoomChange={setFullscreenZoom}
+          onClose={() => setFullscreen(false)}
+          onDownload={handleDownload}
+        />
       )}
     </aside>
+  );
+}
+
+/* ---------- Zoom toolbar ---------- */
+
+function ZoomToolbar({
+  zoom,
+  onZoomChange,
+  onDownload,
+  onExpand,
+  onClose,
+  variant = "light",
+}: {
+  zoom: number | null;
+  onZoomChange: (z: number | null) => void;
+  onDownload: () => void;
+  onExpand?: () => void;
+  onClose?: () => void;
+  variant?: "light" | "dark";
+}) {
+  const displayZoom = zoom ?? null;
+
+  const zoomIn = () => {
+    const current = zoom ?? 50;
+    const next = ZOOM_LEVELS.find((z) => z > current);
+    onZoomChange(next ?? ZOOM_LEVELS[ZOOM_LEVELS.length - 1]);
+  };
+
+  const zoomOut = () => {
+    const current = zoom ?? 50;
+    const prev = [...ZOOM_LEVELS].reverse().find((z) => z < current);
+    onZoomChange(prev ?? ZOOM_LEVELS[0]);
+  };
+
+  const resetZoom = () => {
+    onZoomChange(null);
+  };
+
+  const isDark = variant === "dark";
+  const btnBase = isDark
+    ? "flex h-8 w-8 items-center justify-center rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+    : "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer";
+  const separatorClass = isDark ? "w-px h-4 bg-white/20" : "w-px h-4 bg-border";
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-lg px-1 py-1",
+        isDark
+          ? "bg-white/10 backdrop-blur-md border border-white/10"
+          : ""
+      )}
+    >
+      {/* Download */}
+      <button onClick={onDownload} className={btnBase} title="Download">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M7.5 2v8.5M7.5 10.5l-3-3M7.5 10.5l3-3M2.5 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <div className={separatorClass} />
+
+      {/* Zoom out */}
+      <button onClick={zoomOut} className={btnBase} title="Zoom out">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M4.5 6.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {/* Zoom percentage */}
+      <button
+        onClick={resetZoom}
+        className={cn(
+          "px-1.5 text-xs font-medium tabular-nums min-w-[3rem] text-center cursor-pointer rounded-md transition-colors",
+          isDark
+            ? "text-white/80 hover:text-white hover:bg-white/10"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+        )}
+        title="Reset to fit"
+      >
+        {displayZoom ? `${displayZoom}%` : "Fit"}
+      </button>
+
+      {/* Zoom in */}
+      <button onClick={zoomIn} className={btnBase} title="Zoom in">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M4.5 6.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M6.5 4.5v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {/* Expand / Close */}
+      {(onExpand || onClose) && (
+        <>
+          <div className={separatorClass} />
+          {onExpand && (
+            <button onClick={onExpand} className={btnBase} title="Expand">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 5V2h3M9 2h3v3M12 9v3h-3M5 12H2V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+          {onClose && (
+            <button onClick={onClose} className={btnBase} title="Close">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Fullscreen viewer ---------- */
+
+function FullscreenViewer({
+  imageUrl,
+  styleName,
+  zoom,
+  onZoomChange,
+  onClose,
+  onDownload,
+}: {
+  imageUrl: string;
+  styleName?: string | null;
+  zoom: number | null;
+  onZoomChange: (z: number | null) => void;
+  onClose: () => void;
+  onDownload: () => void;
+}) {
+  return (
+    <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/95 data-[state=open]:animate-in data-[state=open]:fade-in" />
+        <DialogPrimitive.Content
+          className="fixed inset-0 z-[60] flex flex-col"
+          aria-describedby={undefined}
+        >
+          <VisuallyHidden.Root>
+            <DialogPrimitive.Title>Infographic Preview</DialogPrimitive.Title>
+          </VisuallyHidden.Root>
+
+          {/* Toolbar row */}
+          <div className="shrink-0 flex items-center justify-center py-3">
+            <ZoomToolbar
+              zoom={zoom}
+              onZoomChange={onZoomChange}
+              onDownload={onDownload}
+              onClose={onClose}
+              variant="dark"
+            />
+          </div>
+
+          {/* Scrollable image area — always centered, scrollable in all directions */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            {zoom !== null ? (
+              <div className="min-h-full min-w-full w-max flex items-center justify-center p-6">
+                <img
+                  src={imageUrl}
+                  alt="Generated infographic"
+                  className="block shrink-0"
+                  style={{ width: `${zoom}vw`, maxWidth: "none", height: "auto" }}
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center p-6">
+                <img
+                  src={imageUrl}
+                  alt="Generated infographic"
+                  className="block max-w-full max-h-full object-contain"
+                  draggable={false}
+                />
+              </div>
+            )}
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -284,29 +421,84 @@ function ImageTab({
   imageUrl,
   isGenerating,
   progress,
+  zoom,
+  onZoomChange,
   onFullscreen,
+  onDownload,
+  isCompleted,
 }: {
   imageUrl: string | null | undefined;
   isGenerating: boolean;
   progress: number;
+  zoom: number | null;
+  onZoomChange: (z: number | null) => void;
   onFullscreen: () => void;
+  onDownload: () => void;
+  isCompleted: boolean;
 }) {
+  const [naturalW, setNaturalW] = useState(0);
+
   if (imageUrl) {
+    const zoomedPx = zoom !== null && naturalW > 0 ? (naturalW * zoom) / 100 : null;
+
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <img
-          src={imageUrl}
-          alt="Generated infographic"
-          className="max-w-full max-h-full object-contain rounded-[var(--radius-md)] cursor-zoom-in"
-          onClick={onFullscreen}
-        />
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
+        {/* Toolbar row */}
+        {isCompleted && (
+          <div className="shrink-0 flex items-center justify-center px-3 py-2 border-b border-border">
+            <ZoomToolbar
+              zoom={zoom}
+              onZoomChange={onZoomChange}
+              onDownload={onDownload}
+              onExpand={onFullscreen}
+              variant="light"
+            />
+          </div>
+        )}
+
+        {/* Scrollable image area — position:relative + absolute to fully contain overflow */}
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute inset-0 overflow-auto">
+            {zoomedPx !== null ? (
+              /* Zoomed: w-max wrapper expands for scrolling */
+              <div className="min-h-full min-w-full w-max flex items-center justify-center p-4">
+                <img
+                  src={imageUrl}
+                  alt="Generated infographic"
+                  className="block shrink-0 rounded-[var(--radius-md)]"
+                  style={{ width: `${zoomedPx}px`, maxWidth: "none", height: "auto" }}
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    if (img.naturalWidth > 0) setNaturalW(img.naturalWidth);
+                  }}
+                  draggable={false}
+                />
+              </div>
+            ) : (
+              /* Fit: constrain to container, no scroll */
+              <div className="w-full h-full flex items-center justify-center p-4">
+                <img
+                  src={imageUrl}
+                  alt="Generated infographic"
+                  className="block max-w-full max-h-full object-contain rounded-[var(--radius-md)] cursor-zoom-in"
+                  onLoad={(e) => {
+                    const img = e.currentTarget;
+                    if (img.naturalWidth > 0) setNaturalW(img.naturalWidth);
+                  }}
+                  onClick={isCompleted ? onFullscreen : undefined}
+                  draggable={false}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isGenerating) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4 w-full max-w-xs">
           <div className="w-full aspect-video rounded-[var(--radius-lg)] border-2 border-dashed border-border flex items-center justify-center">
             <div className="text-center space-y-2">

@@ -336,9 +336,9 @@ export function ChatColumn({
                           `sumi-infographic-${Date.now()}.png`
                         )
                       }
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-md)] text-xs font-medium bg-accent hover:bg-accent/80 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[var(--radius-md)] text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                     >
-                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M7 2v8M7 10l-3-3M7 10l3-3M2 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       Download
